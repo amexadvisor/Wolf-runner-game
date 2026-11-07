@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Endless Wolf Runner</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background-color: #0d131a;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+    #gameContainer {
+      position: relative;
+      width: 900px;
+      height: 450px;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid #2a3b4c;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #ui {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      right: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    }
+    .lives-box {
+      font-size: 26px;
+      letter-spacing: 4px;
+    }
+    .stats-box {
+      text-align: right;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .stats-box span {
+      color: #ffd166;
+    }
+    #overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(13, 19, 26, 0.75);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      text-align: center;
+      backdrop-filter: blur(4px);
+    }
+    #overlay h1 {
+      font-size: 46px;
+      margin-bottom: 10px;
+      color: #e0fbfc;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    #overlay p {
+      font-size: 18px;
+      color: #98c1d9;
+      margin-bottom: 24px;
+      max-width: 500px;
+      line-height: 1.5;
+    }
+    button {
+      padding: 12px 32px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #0d131a;
+      background: #ffd166;
+      border: none;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+      box-shadow: 0 4px 15px rgba(255, 209, 102, 0.4);
+    }
+    button:hover {
+      background: #ffde8a;
+      transform: scale(1.05);
+    }
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+<div id="gameContainer">
+  <canvas id="gameCanvas" width="900" height="450"></canvas>
+  
+  <div id="ui">
+    <div class="lives-box" id="livesDisplay">❤️❤️❤️</div>
+    <div class="stats-box">
+      <div>SCORE: <span id="scoreDisplay">0</span></div>
+      <div style="font-size: 14px; color: #98c1d9;">MEAT: <span id="foodDisplay">0</span></div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <h1 id="overlayTitle">Midnight Wolf Runner</h1>
+    <p id="overlayDesc">
+      <strong>Space / Up Arrow / Click</strong> to Jump (Double Jump supported)<br>
+      <strong>Down Arrow / S</strong> to Fast-Fall<br>
+      Collect 🥩 (+50 pts) & 🍒 (+1 Life). Dodge Rocks and Eagles!
+    </p>
+    <button id="startBtn">RUN</button>
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const livesDisplay = document.getElementById('livesDisplay');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const foodDisplay = document.getElementById('foodDisplay');
+const overlay = document.getElementById('overlay');
+const overlayTitle = document.getElementById('overlayTitle');
+const overlayDesc = document.getElementById('overlayDesc');
+const startBtn = document.getElementById('startBtn');
+
+const GROUND_Y = 380;
+let gameState = 'START';
+let lastTime = 0;
+let distanceScore = 0;
+let bonusScore = 0;
+let foodCount = 0;
+let gameSpeed = 380; // pixels per second
+let spawnObstacleTimer = 0;
+let spawnFoodTimer = 0;
+
+// Wolf Player Object
+const wolf = {
+  x: 110,
+  y: GROUND_Y,
+  width: 68,
+  height: 44,
+  vy: 0,
+  gravity: 1950,
+  jumpForce: -690,
+  jumpsLeft: 2,
+  lives: 3,
+  maxLives: 3,
+  invincibleTimer: 0,
+  runCycle: 0,
+  
+  reset() {
+    this.y = GROUND_Y;
+    this.vy = 0;
+    this.jumpsLeft = 2;
+    this.lives = 3;
+    this.invincibleTimer = 0;
+    this.runCycle = 0;
+  },
+
+  jump() {
+    if (this.jumpsLeft > 0) {
+      this.vy = this.jumpForce;
+      this.jumpsLeft--;
+      createParticles(this.x + 20, this.y, '#98c1d9', 8);
+    }
+  },
+
+  fastFall() {
+    if (this.y < GROUND_Y) {
+      this.vy += 900;
+    }
+  },
+
+  update(dt) {
+    this.vy += this.gravity * dt;
+    this.y += this.vy * dt;
+
+    if (this.y >= GROUND_Y) {
+      this.y = GROUND_Y;
+      this.vy = 0;
+      this.jumpsLeft = 2;
+      this.runCycle += dt * (gameSpeed * 0.035);
+    } else {
+      this.runCycle += dt * 4;
+    }
+
+    if (this.invincibleTimer > 0) {
+      this.invincibleTimer -= dt;
+    }
+  },
+
+  draw() {
+    if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 12) % 2 === 0) {
+      return; // Blink effect during invincibility
+    }
+
+    ctx.save();
+    ctx.translate(this.x, this.y);
+
+    const isAirborne = this.y < GROUND_Y;
+    const legSwing = isAirborne ? 0.6 : Math.sin(this.runCycle);
+    const bounce = isAirborne ? 0 : Math.abs(Math.cos(this.runCycle)) * 4;
+
+    ctx.translate(0, -bounce);
+
+    // Shadow on ground
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.beginPath();
+    ctx.ellipse(34, bounce, Math.max(15, 34 - (GROUND_Y - this.y) * 0.1), 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Back Legs
+    ctx.strokeStyle = '#4a5568';
+    ctx.lineWidth = 7;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(16, -18);
+    ctx.lineTo(16 - legSwing * 14, -3);
+    ctx.moveTo(50, -18);
+    ctx.lineTo(50 + legSwing * 14, -3);
+    ctx.stroke();
+
+    // Tail
+    ctx.strokeStyle = '#718096';
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.moveTo(10, -24);
+    ctx.quadraticCurveTo(-8, -28 + legSwing * 5, -14, -18);
+    ctx.stroke();
+
+    // Torso
+    ctx.fillStyle = '#718096';
+    ctx.beginPath();
+    ctx.roundRect(8, -34, 48, 20, 9);
+    ctx.fill();
+
+    // Underbelly
+    ctx.fillStyle = '#cbd5e0';
+    ctx.beginPath();
+    ctx.roundRect(14, -22, 36, 7, 4);
+    ctx.fill();
+
+    // Front Legs
+    ctx.strokeStyle = '#a0aec0';
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(18, -16);
+    ctx.lineTo(18 + legSwing * 15, -3);
+    ctx.moveTo(50, -16);
+    ctx.lineTo(50 - legSwing * 15, -3);
+    ctx.stroke();
+
+    // Neck & Head
+    ctx.fillStyle = '#718096';
+    ctx.beginPath();
+    ctx.moveTo(46, -30);
+    ctx.lineTo(58, -46);
+    ctx.lineTo(74, -38);
+    ctx.lineTo(74, -31);
+    ctx.lineTo(54, -24);
+    ctx.closePath();
+    ctx.fill();
+
+    // Ears
+    ctx.fillStyle = '#4a5568';
+    ctx.beginPath();
+    ctx.moveTo(53, -43);
+    ctx.lineTo(56, -55);
+    ctx.lineTo(63, -44);
+    ctx.fill();
+
+    // Eye
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    ctx.arc(63, -39, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Nose
+    ctx.fillStyle = '#1a202c';
+    ctx.beginPath();
+    ctx.arc(73, -36, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  },
+
+  getHitbox() {
+    return {
+      x: this.x + 10,
+      y: this.y - 40,
+      width: 54,
+      height: 38
+    };
+  }
+};
+
+// Parallax Background Layers
+const stars = Array.from({ length: 45 }, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * 220,
+  r: Math.random() * 1.8 + 0.5
+}));
+
+const bgTrees = Array.from({ length: 18 }, (_, i) => ({
+  x: i * 65,
+  h: 70 + Math.random() * 55
+}));
+
+let obstacles = [];
+let foods = [];
+let particles = [];
+
+function createParticles(x, y, color, count = 12) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 260,
+      vy: (Math.random() - 0.7) * 260,
+      size: Math.random() * 5 + 2,
+      color,
+      life: 1
+    });
+  }
+}
+
+function spawnObstacle() {
+  const isBird = Math.random() > 0.62 && distanceScore > 120;
+  if (isBird) {
+    obstacles.push({
+      type: 'EAGLE',
+      x: canvas.width + 40,
+      y: GROUND_Y - (Math.random() > 0.5 ? 65 : 115),
+      width: 44,
+      height: 26,
+      wingPhase: Math.random() * Math.PI * 2
+    });
+  } else {
+    const isTall = Math.random() > 0.5;
+    obstacles.push({
+      type: 'ROCK',
+      x: canvas.width + 40,
+      y: GROUND_Y,
+      width: isTall ? 38 : 48,
+      height: isTall ? 46 : 32
+    });
+  }
+}
+
+function spawnFood() {
+  const isLifeBerry = wolf.lives < wolf.maxLives && Math.random() < 0.25;
+  const heightOffset = Math.random() > 0.45 ? 95 : 22;
+  foods.push({
+    type: isLifeBerry ? 'BERRY' : 'MEAT',
+    x: canvas.width + 40,
+    y: GROUND_Y - heightOffset,
+    baseY: GROUND_Y - heightOffset,
+    radius: 14,
+    phase: Math.random() * Math.PI * 2
+  });
+}
+
+function checkOverlap(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
+function updateUI() {
+  livesDisplay.textContent = '❤️'.repeat(wolf.lives) + '🖤'.repeat(wolf.maxLives - wolf.lives);
+  scoreDisplay.textContent = Math.floor(distanceScore + bonusScore);
+  foodDisplay.textContent = foodCount;
+}
+
+function resetGame() {
+  wolf.reset();
+  obstacles = [];
+  foods = [];
+  particles = [];
+  distanceScore = 0;
+  bonusScore = 0;
+  foodCount = 0;
+  gameSpeed = 380;
+  spawnObstacleTimer = 1.2;
+  spawnFoodTimer = 1.8;
+  updateUI();
+}
+
+function update(dt) {
+  gameSpeed += dt * 7; // Smooth gradual acceleration
+  distanceScore += (gameSpeed * dt) * 0.05;
+
+  wolf.update(dt);
+
+  // Parallax Trees
+  bgTrees.forEach(tree => {
+    tree.x -= gameSpeed * 0.35 * dt;
+    if (tree.x < -60) {
+      tree.x = canvas.width + 40;
+      tree.h = 70 + Math.random() * 55;
+    }
+  });
+
+  // Obstacles
+  spawnObstacleTimer -= dt;
+  if (spawnObstacleTimer <= 0) {
+    spawnObstacle();
+    spawnObstacleTimer = Math.max(0.65, (1.5 - gameSpeed * 0.0008) + Math.random() * 0.7);
+  }
+
+  const wolfBox = wolf.getHitbox();
+
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const obs = obstacles[i];
+    const speedMultiplier = obs.type === 'EAGLE' ? 1.25 : 1;
+    obs.x -= gameSpeed * speedMultiplier * dt;
+    if (obs.type === 'EAGLE') obs.wingPhase += dt * 12;
+
+    const obsBox = {
+      x: obs.x + 4,
+      y: obs.y - obs.height + 4,
+      width: obs.width - 8,
+      height: obs.height - 8
+    };
+
+    if (wolf.invincibleTimer <= 0 && checkOverlap(wolfBox, obsBox)) {
+      wolf.lives--;
+      wolf.invincibleTimer = 1.6;
+      createParticles(wolf.x + 30, wolf.y - 20, '#ef476f', 20);
+      updateUI();
+
+      if (wolf.lives <= 0) {
+        gameState = 'GAMEOVER';
+        overlayTitle.textContent = 'Game Over';
+        overlayDesc.innerHTML = `Total Score: <strong>${Math.floor(distanceScore + bonusScore)}</strong> | Meat Collected: <strong>${foodCount}</strong>`;
+        startBtn.textContent = 'PLAY AGAIN';
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    if (obs.x + obs.width < -50) {
+      obstacles.splice(i, 1);
+    }
+  }
+
+  // Foods
+  spawnFoodTimer -= dt;
+  if (spawnFoodTimer <= 0) {
+    spawnFood();
+    spawnFoodTimer = 1.6 + Math.random() * 1.6;
+  }
+
+  for (let i = foods.length - 1; i >= 0; i--) {
+    const f = foods[i];
+    f.x -= gameSpeed * dt;
+    f.phase += dt * 5;
+    f.y = f.baseY + Math.sin(f.phase) * 7;
+
+    const foodBox = {
+      x: f.x - f.radius,
+      y: f.y - f.radius,
+      width: f.radius * 2,
+      height: f.radius * 2
+    };
+
+    if (checkOverlap(wolfBox, foodBox)) {
+      if (f.type === 'BERRY') {
+        wolf.lives = Math.min(wolf.maxLives, wolf.lives + 1);
+        createParticles(f.x, f.y, '#06d6a0', 16);
+      } else {
+        bonusScore += 50;
+        foodCount++;
+        createParticles(f.x, f.y, '#ffd166', 14);
+      }
+      foods.splice(i, 1);
+      updateUI();
+      continue;
+    }
+
+    if (f.x < -40) {
+      foods.splice(i, 1);
+    }
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt * 2.2;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  updateUI();
+}
+
+function drawBackground() {
+  // Night Sky Gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+  skyGrad.addColorStop(0, '#0b132b');
+  skyGrad.addColorStop(1, '#1c2541');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, canvas.width, GROUND_Y);
+
+  // Stars
+  ctx.fillStyle = '#ffffff';
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Glowing Moon
+  ctx.fillStyle = '#fefae0';
+  ctx.beginPath();
+  ctx.arc(760, 85, 38, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Parallax Pine Trees
+  ctx.fillStyle = '#141e30';
+  bgTrees.forEach(t => {
+    ctx.beginPath();
+    ctx.moveTo(t.x, GROUND_Y);
+    ctx.lineTo(t.x + 25, GROUND_Y - t.h);
+    ctx.lineTo(t.x + 50, GROUND_Y);
+    ctx.fill();
+  });
+
+  // Ground
+  ctx.fillStyle = '#2b3a4a';
+  ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+  ctx.fillStyle = '#3d5a80';
+  ctx.fillRect(0, GROUND_Y, canvas.width, 6);
+}
+
+function drawEntities() {
+  // Obstacles
+  obstacles.forEach(obs => {
+    if (obs.type === 'ROCK') {
+      ctx.fillStyle = '#4a4e69';
+      ctx.beginPath();
+      ctx.moveTo(obs.x, obs.y);
+      ctx.lineTo(obs.x + obs.width * 0.25, obs.y - obs.height);
+      ctx.lineTo(obs.x + obs.width * 0.75, obs.y - obs.height * 0.85);
+      ctx.lineTo(obs.x + obs.width, obs.y);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      // Eagle
+      ctx.save();
+      ctx.translate(obs.x + obs.width / 2, obs.y - obs.height / 2);
+      ctx.fillStyle = '#e07a5f';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 18, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Flapping Wing
+      ctx.strokeStyle = '#f4a261';
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.moveTo(-4, 0);
+      ctx.lineTo(4, Math.sin(obs.wingPhase) * 16);
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+
+  // Foods
+  foods.forEach(f => {
+    ctx.save();
+    ctx.translate(f.x, f.y);
+    if (f.type === 'MEAT') {
+      // Bone
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-13, -3, 26, 6);
+      // Meat Chunk
+      ctx.fillStyle = '#e63946';
+      ctx.beginPath();
+      ctx.arc(0, 0, 10, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Golden Life Berry
+      ctx.fillStyle = '#06d6a0';
+      ctx.beginPath();
+      ctx.arc(0, 0, 11, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  });
+
+  // Wolf
+  wolf.draw();
+
+  // Particles
+  particles.forEach(p => {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.globalAlpha = 1;
+}
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+  lastTime = timestamp;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawBackground();
+
+  if (gameState === 'PLAYING') {
+    update(dt);
+  }
+  drawEntities();
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Controls
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    e.preventDefault();
+    if (gameState === 'PLAYING') wolf.jump();
+  }
+  if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+    e.preventDefault();
+    if (gameState === 'PLAYING') wolf.fastFall();
+  }
+});
+
+canvas.addEventListener('pointerdown', () => {
+  if (gameState === 'PLAYING') wolf.jump();
+});
+
+startBtn.addEventListener('click', () => {
+  resetGame();
+  gameState = 'PLAYING';
+  overlay.classList.add('hidden');
+});
+
+requestAnimationFrame(timestamp => {
+  lastTime = timestamp;
+  gameLoop(timestamp);
+});
+</script>
+</body>
+</html>
