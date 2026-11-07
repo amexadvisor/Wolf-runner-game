@@ -2,17 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alpha Wolf: Realistic Skill Runner & Combat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Alpha Wolf: Realistic Runner & 3D POV Combat</title>
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
       user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
     }
     body {
-      background-color: #05070b;
+      background-color: #04060a;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -23,24 +25,27 @@
     #gameContainer {
       position: relative;
       width: 1000px;
-      height: 520px;
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.95);
+      height: 540px;
+      max-width: 100vw;
+      max-height: 100vh;
+      box-shadow: 0 25px 75px rgba(0, 0, 0, 0.95);
       border-radius: 12px;
       overflow: hidden;
-      border: 2px solid #2b394a;
-      background: #080d14;
+      border: 2px solid #283546;
+      background: #070b12;
     }
     canvas {
       display: block;
       width: 100%;
       height: 100%;
+      cursor: pointer;
     }
-    /* HUD & Health Bars */
+    /* Top HUD */
     #hud {
       position: absolute;
       top: 16px;
-      left: 20px;
-      right: 20px;
+      left: 22px;
+      right: 22px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -50,8 +55,8 @@
     .bars-panel {
       display: flex;
       flex-direction: column;
-      gap: 8px;
-      width: 280px;
+      gap: 7px;
+      width: 290px;
     }
     .bar-row {
       display: flex;
@@ -59,10 +64,10 @@
       gap: 10px;
     }
     .bar-label {
-      font-size: 12px;
-      font-weight: 800;
+      font-size: 11px;
+      font-weight: 900;
       color: #cbd5e1;
-      width: 58px;
+      width: 62px;
       letter-spacing: 1px;
       text-shadow: 0 2px 4px #000;
     }
@@ -74,12 +79,12 @@
       border-radius: 8px;
       overflow: hidden;
       position: relative;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.8);
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.85);
     }
     #hpFill {
       height: 100%;
       width: 100%;
-      background: linear-gradient(90deg, #991b1b 0%, #dc2626 50%, #22c55e 100%);
+      background: linear-gradient(90deg, #991b1b 0%, #ef4444 45%, #22c55e 100%);
       transition: width 0.15s ease-out;
     }
     #hpDamageFill {
@@ -88,7 +93,7 @@
       left: 0;
       height: 100%;
       width: 100%;
-      background: #f87171;
+      background: #fca5a5;
       z-index: -1;
       transition: width 0.45s ease-out;
     }
@@ -96,7 +101,13 @@
       height: 100%;
       width: 100%;
       background: linear-gradient(90deg, #0284c7, #38bdf8);
-      transition: width 0.1s linear;
+      transition: width 0.08s linear;
+    }
+    #rageFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #d97706, #f59e0b, #fef08a);
+      transition: width 0.15s ease-out;
     }
     .bar-value {
       position: absolute;
@@ -120,7 +131,7 @@
       letter-spacing: 1px;
     }
     .score-main span {
-      color: #f59e0b;
+      color: #fbbf24;
     }
     .score-sub {
       font-size: 13px;
@@ -128,71 +139,100 @@
       font-weight: 700;
       margin-top: 2px;
     }
-    #modeBanner {
+    #runnerHint {
       position: absolute;
-      top: 68px;
+      bottom: 14px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(153, 27, 27, 0.9);
-      border: 1px solid #fca5a5;
-      color: #fff;
-      padding: 6px 22px;
+      color: rgba(203, 213, 225, 0.7);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      text-shadow: 0 2px 4px #000;
+      background: rgba(15, 23, 42, 0.55);
+      padding: 5px 16px;
       border-radius: 20px;
-      font-weight: 800;
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    #modeBanner {
+      position: absolute;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(153, 27, 27, 0.92);
+      border: 1.5px solid #fca5a5;
+      color: #fff;
+      padding: 7px 26px;
+      border-radius: 22px;
+      font-weight: 900;
       font-size: 14px;
       letter-spacing: 1.5px;
       text-transform: uppercase;
       pointer-events: none;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.7);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.8);
       transition: opacity 0.3s;
       opacity: 0;
+      z-index: 6;
     }
-    /* Interactive Combat & Runner On-Screen Controls */
-    #controlsBar {
+
+    /* Combat Controller - ONLY Visible in 3D Wolf POV Fight Mode */
+    #combatControls {
       position: absolute;
-      bottom: 14px;
-      left: 18px;
-      right: 18px;
+      bottom: 16px;
+      left: 20px;
+      right: 20px;
       display: flex;
       justify-content: space-between;
       align-items: flex-end;
       pointer-events: none;
-      z-index: 6;
+      z-index: 8;
     }
-    .ctrl-group {
+    .ctrl-cluster {
       display: flex;
-      gap: 8px;
+      gap: 10px;
       pointer-events: auto;
     }
-    .ctrl-btn {
-      background: rgba(15, 23, 42, 0.78);
-      border: 1.5px solid rgba(148, 163, 184, 0.45);
-      color: #e2e8f0;
-      padding: 10px 14px;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 800;
+    .c-btn {
+      background: rgba(15, 23, 42, 0.84);
+      border: 2px solid rgba(148, 163, 184, 0.55);
+      color: #f8fafc;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 14px;
+      font-weight: 900;
       cursor: pointer;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-      transition: transform 0.08s, background 0.1s;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.75);
+      transition: transform 0.08s, background 0.12s, border-color 0.12s;
+      min-width: 92px;
+      text-align: center;
     }
-    .ctrl-btn:active, .ctrl-btn.active {
-      background: rgba(245, 158, 11, 0.85);
-      color: #0f172a;
-      transform: scale(0.94);
-    }
-    .ctrl-btn span {
+    .c-btn span {
       display: block;
       font-size: 10px;
       color: #94a3b8;
-      font-weight: 600;
+      font-weight: 700;
+      margin-top: 3px;
     }
+    .c-btn:active {
+      transform: scale(0.92);
+      background: rgba(245, 158, 11, 0.9);
+      color: #090d16;
+    }
+    .c-btn.atk-bite { border-color: #f87171; }
+    .c-btn.atk-claw { border-color: #fbbf24; }
+    .c-btn.atk-pounce { border-color: #c084fc; }
+    .c-btn.atk-howl {
+      border-color: #38bdf8;
+      background: rgba(2, 132, 199, 0.35);
+    }
+
     /* Start / Game Over Overlay */
     #overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle, rgba(15, 23, 42, 0.84) 0%, rgba(5, 7, 11, 0.96) 100%);
+      background: radial-gradient(circle, rgba(15, 23, 42, 0.86) 0%, rgba(4, 6, 10, 0.96) 100%);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -200,11 +240,11 @@
       color: #fff;
       text-align: center;
       backdrop-filter: blur(6px);
-      z-index: 10;
+      z-index: 15;
     }
     #overlay h1 {
-      font-size: 44px;
-      margin-bottom: 10px;
+      font-size: 42px;
+      margin-bottom: 8px;
       color: #f8fafc;
       text-transform: uppercase;
       letter-spacing: 3px;
@@ -214,13 +254,13 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
-      max-width: 720px;
-      margin: 14px 0 24px;
+      max-width: 780px;
+      margin: 12px 0 22px;
       text-align: left;
-      background: rgba(30, 41, 59, 0.55);
+      background: rgba(30, 41, 59, 0.6);
       padding: 16px 22px;
       border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.3);
     }
     .guide-col h3 {
       color: #fbbf24;
@@ -235,7 +275,7 @@
       line-height: 1.55;
     }
     #startBtn {
-      padding: 13px 42px;
+      padding: 14px 44px;
       font-size: 19px;
       font-weight: 900;
       color: #090d16;
@@ -243,7 +283,7 @@
       border: none;
       border-radius: 30px;
       cursor: pointer;
-      box-shadow: 0 6px 22px rgba(234, 88, 12, 0.5);
+      box-shadow: 0 6px 22px rgba(234, 88, 12, 0.55);
       letter-spacing: 1.5px;
       transition: transform 0.15s ease;
     }
@@ -258,7 +298,7 @@
 <body>
 
 <div id="gameContainer">
-  <canvas id="gameCanvas" width="1000" height="520"></canvas>
+  <canvas id="gameCanvas" width="1000" height="540"></canvas>
 
   <div id="hud">
     <div class="bars-panel">
@@ -276,28 +316,39 @@
           <div id="staminaFill"></div>
         </div>
       </div>
+      <div class="bar-row">
+        <div class="bar-label">RAGE</div>
+        <div class="bar-track" style="height: 9px;">
+          <div id="rageFill"></div>
+        </div>
+      </div>
     </div>
 
-    <div id="modeBanner">PASTURE AMBUSH! FIGHT THE FARMERS!</div>
+    <div id="modeBanner">3D WOLF POV: DEVOUR SHEEP & FIGHT FARMERS!</div>
 
     <div class="score-panel">
       <div class="score-main">SKILL SCORE: <span id="scoreDisplay">0</span></div>
-      <div class="score-sub" id="phaseDisplay">NEXT PASTURE RAID: 500m</div>
+      <div class="score-sub" id="phaseDisplay">NEXT PASTURE RAID: 450m</div>
     </div>
   </div>
 
-  <!-- On-screen interactive controller for both Runner & Farmer Combat -->
-  <div id="controlsBar">
-    <div class="ctrl-group" id="dpadGroup">
-      <button class="ctrl-btn" id="btnLeft">◀ LEFT<span>A / Left</span></button>
-      <button class="ctrl-btn" id="btnRight">RIGHT ▶<span>D / Right</span></button>
-      <button class="ctrl-btn" id="btnUp">▲ UP<span>W / Up</span></button>
-      <button class="ctrl-btn" id="btnDown">▼ DOWN<span>S / Down</span></button>
+  <!-- Subtle screen hint during Runner (No buttons blocking screen!) -->
+  <div id="runnerHint">
+    TAP SCREEN (or Space/Up) = Jump &bull; SWIPE DOWN (or Down) = Crouch/Dive &bull; SWIPE RIGHT (or F) = Smash Fence
+  </div>
+
+  <!-- 3D Wolf POV Combat Controller (Hidden during Runner, appears automatically in Fight Scene) -->
+  <div id="combatControls" class="hidden">
+    <div class="ctrl-cluster">
+      <button class="c-btn" id="btnDodgeLeft">◀ DODGE LEFT<span>A / Left Arrow</span></button>
+      <button class="c-btn" id="btnGuard">🛡️ BRACE / DUCK<span>S / Down Arrow</span></button>
+      <button class="c-btn" id="btnDodgeRight">DODGE RIGHT ▶<span>D / Right Arrow</span></button>
     </div>
-    <div class="ctrl-group">
-      <button class="ctrl-btn" id="btnBite">🐺 CLAW / BITE<span>F / J / Click</span></button>
-      <button class="ctrl-btn" id="btnDodge">⚡ LUNGE / DODGE<span>Shift / K</span></button>
-      <button class="ctrl-btn" id="btnJump">⏫ LEAP<span>Space</span></button>
+    <div class="ctrl-cluster">
+      <button class="c-btn atk-bite" id="btnBite">🐺 FANG BITE<span>J / Fast Snap</span></button>
+      <button class="c-btn atk-claw" id="btnClaw">🐾 CLAW SLASH<span>K / Wide Swipe</span></button>
+      <button class="c-btn atk-pounce" id="btnPounce">🩸 THROAT POUNCE<span>L / Heavy Leap</span></button>
+      <button class="c-btn atk-howl" id="btnHowl">🌕 ALPHA HOWL<span>Space / Heal+Stun</span></button>
     </div>
   </div>
 
@@ -305,20 +356,20 @@
     <h1 id="overlayTitle">Alpha Wolf: Wild Hunt</h1>
     <div class="guide-grid" id="guideGrid">
       <div class="guide-col">
-        <h3>1. Skill-Based Runner</h3>
+        <h3>1. Pure Screen Runner (No Buttons)</h3>
         <p>
-          • <strong>Zero free distance points:</strong> Score only increases from skill!<br>
-          • <strong>Close Dodge (+2 to +3):</strong> Jump/Duck right before an obstacle.<br>
-          • <strong>Fence Smash (+3):</strong> Use <strong>Bite/Lunge (F or Shift)</strong> to shatter wooden fences.<br>
-          • <strong>Obstacles:</strong> Steel Bear Traps, Logs, Boulders, Fences & Diving Eagles.
+          • <strong>Tap Screen (or Up/W/Space):</strong> Leap & Double-Leap.<br>
+          • <strong>Swipe Down / Hold Bottom (or Down/S):</strong> Crouch under eagles or fast-fall.<br>
+          • <strong>Swipe Right (or F/Shift):</strong> Lunge & shatter wooden ranch fences (+3 Skill).<br>
+          • <strong>Skill Scoring:</strong> Zero free distance points—earn points only from close dodges, fence smashes, and hunting!
         </p>
       </div>
       <div class="guide-col">
-        <h3>2. Sheep Raid & Farmer Combat</h3>
+        <h3>2. 3D Wolf POV Farmer Combat</h3>
         <p>
-          • Every 500m, your wolf raids a sheep pasture (+5 pts & +20 HP per sheep).<br>
-          • <strong>Angry Farmers</strong> arrive with pitchforks & clubs to stop you!<br>
-          • Use <strong>W/A/S/D or Arrows</strong> to move in 2.5D depth, <strong>F/J</strong> to Bite, and <strong>Shift/K</strong> to Dodge their red telegraph strikes!
+          • Every 450m, you raid a sheep flock and the camera shifts into <strong>First-Person 3D Wolf POV</strong>!<br>
+          • <strong>4 Wolf Attacks:</strong> Fang Bite (Fast), Claw Slash (Wide AOE), Throat Pounce (Armor Break), and Alpha Howl (Rage Heal + Stun).<br>
+          • <strong>Dodge Left/Right</strong> when farmers flash RED to evade pitchforks & clubs!
         </p>
       </div>
     </div>
@@ -335,128 +386,138 @@ const hpFill = document.getElementById('hpFill');
 const hpDamageFill = document.getElementById('hpDamageFill');
 const hpText = document.getElementById('hpText');
 const staminaFill = document.getElementById('staminaFill');
+const rageFill = document.getElementById('rageFill');
 const scoreDisplay = document.getElementById('scoreDisplay');
 const phaseDisplay = document.getElementById('phaseDisplay');
 const modeBanner = document.getElementById('modeBanner');
+const runnerHint = document.getElementById('runnerHint');
+const combatControls = document.getElementById('combatControls');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlayTitle');
 const guideGrid = document.getElementById('guideGrid');
 const startBtn = document.getElementById('startBtn');
 
-const GROUND_Y = 415;
-let gameState = 'MENU'; // 'MENU', 'RUNNER', 'RAID_INTRO', 'COMBAT', 'GAMEOVER'
+const GROUND_Y = 425;
+let gameState = 'MENU'; // 'MENU', 'RUNNER', 'POV_COMBAT', 'GAMEOVER'
 let lastTime = 0;
 
-// Low-number, high-value skill score
+// Skill-based low-number score
 let skillScore = 0;
-let comboMultiplier = 1;
-let comboTimer = 0;
 let raidWave = 1;
-let distanceToRaid = 500;
-let gameSpeed = 420;
+let distanceToRaid = 450;
+let gameSpeed = 430;
 let screenShake = 0;
+let redFlash = 0;
 
-// Input State for Keyboard & On-screen Controller
-const keys = {
-  left: false,
-  right: false,
-  up: false,
-  down: false
-};
-
-// Floating combat/skill text popups
-let popups = [];
-let particles = [];
+// Runner Entities
 let obstacles = [];
 let foods = [];
-let sheepList = [];
-let farmers = [];
+let particles = [];
+let popups = [];
 let spawnObsTimer = 0;
 let spawnFoodTimer = 0;
 
-function addPopup(x, y, text, color = '#fbbf24', size = 18) {
-  popups.push({ x, y, text, color, size, life: 1.1, vy: -55 });
+// 3D POV Combat Entities & State
+// Lanes: -1 (Left), 0 (Center), 1 (Right)
+const povWolf = {
+  lane: 0,
+  visualLane: 0,
+  dodgeCooldown: 0,
+  bracing: false,
+  action: 'IDLE', // 'IDLE', 'BITE', 'CLAW', 'POUNCE', 'HOWL'
+  actionTimer: 0,
+  actionDuration: 0,
+  pounceZoom: 0,
+  jawSnap: 0,
+  leftClawSwipe: 0,
+  rightClawSwipe: 0,
+  breathCycle: 0
+};
+
+let povEnemies = [];
+let povSheep = [];
+let slashTrails = [];
+
+function addPopup(x, y, text, color = '#fbbf24', size = 19) {
+  popups.push({ x, y, text, color, size, life: 1.15, vy: -55 });
 }
 
 function addScore(points, label, x, y, color = '#fbbf24') {
-  const total = Math.round(points * comboMultiplier);
-  skillScore += total;
-  comboTimer = 3.5;
-  addPopup(x, y - 35, `+${total} ${label}`, color, 17);
+  skillScore += points;
+  wolf.rage = Math.min(100, wolf.rage + points * 4);
+  addPopup(x, y, `+${points} ${label}`, color, 18);
   updateHUD();
 }
 
-function createParticles(x, y, color, count = 12, speed = 240) {
+function createParticles(x, y, color, count = 14, speed = 260) {
   for (let i = 0; i < count; i++) {
     particles.push({
       x,
       y,
       vx: (Math.random() - 0.5) * speed,
       vy: (Math.random() - 0.75) * speed,
-      size: Math.random() * 4.5 + 1.5,
+      size: Math.random() * 5 + 1.5,
       color,
       life: 1
     });
   }
 }
 
-// Realistic Articulated Wolf (Supports both Runner & 2.5D Arena Combat)
+// 2D Side-View Articulated Wolf (Used in Runner Phase)
 const wolf = {
-  x: 130,
+  x: 135,
   y: GROUND_Y,
-  z: 0, // Depth offset used in 2.5D combat arena
-  vx: 0,
   vy: 0,
-  vz: 0,
-  facing: 1, // 1 = right, -1 = left
-  width: 86,
-  height: 52,
-  gravity: 2100,
-  jumpForce: -740,
+  gravity: 2150,
+  jumpForce: -750,
   jumpsLeft: 2,
   hp: 100,
   maxHp: 100,
   stamina: 100,
   maxStamina: 100,
+  rage: 0,
   invincibleTimer: 0,
-  attackTimer: 0,
   lungeTimer: 0,
   crouching: false,
   runCycle: 0,
 
   reset() {
-    this.x = 130;
+    this.x = 135;
     this.y = GROUND_Y;
-    this.z = 0;
-    this.vx = 0;
     this.vy = 0;
-    this.vz = 0;
-    this.facing = 1;
     this.jumpsLeft = 2;
     this.hp = 100;
     this.stamina = 100;
+    this.rage = 35;
     this.invincibleTimer = 0;
-    this.attackTimer = 0;
     this.lungeTimer = 0;
     this.crouching = false;
     this.runCycle = 0;
   },
 
-  takeDamage(amount, sourceX) {
-    if (this.invincibleTimer > 0 || this.lungeTimer > 0.08) {
-      addScore(2, 'PERFECT EVADE!', this.x, this.y - 30, '#38bdf8');
-      return;
+  takeDamage(amount) {
+    if (this.invincibleTimer > 0) return;
+    if (gameState === 'POV_COMBAT' && povWolf.bracing) {
+      amount = Math.round(amount * 0.35);
+      addScore(1, 'GUARDED!', canvas.width / 2, 260, '#38bdf8');
     }
     this.hp = Math.max(0, this.hp - amount);
-    this.invincibleTimer = 1.1;
-    comboMultiplier = 1;
-    screenShake = 10;
-    createParticles(this.x + 35, this.y + this.z - 25, '#dc2626', 22);
-    addPopup(this.x + 20, this.y + this.z - 45, `-${amount} HP`, '#ef4444', 20);
-
-    if (sourceX !== undefined && gameState === 'COMBAT') {
-      this.vx = (this.x < sourceX ? -1 : 1) * 260;
-    }
+    this.invincibleTimer = 0.95;
+    screenShake = 14;
+    redFlash = 0.45;
+    createParticles(
+      gameState === 'RUNNER' ? this.x + 40 : canvas.width / 2,
+      gameState === 'RUNNER' ? this.y - 25 : canvas.height - 120,
+      '#dc2626',
+      24
+    );
+    addPopup(
+      gameState === 'RUNNER' ? this.x + 20 : canvas.width / 2 - 30,
+      gameState === 'RUNNER' ? this.y - 55 : 220,
+      `-${amount} HP`,
+      '#ef4444',
+      22
+    );
     updateHUD();
 
     if (this.hp <= 0) {
@@ -469,128 +530,62 @@ const wolf = {
     this.hp = Math.min(this.maxHp, this.hp + amount);
     const gained = Math.round(this.hp - prev);
     if (gained > 0) {
-      addPopup(this.x + 20, this.y + this.z - 45, `+${gained} HP`, '#22c55e', 17);
+      addPopup(
+        gameState === 'RUNNER' ? this.x + 20 : canvas.width / 2,
+        gameState === 'RUNNER' ? this.y - 50 : 240,
+        `+${gained} HP`,
+        '#22c55e',
+        18
+      );
     }
     updateHUD();
   },
 
   jump() {
-    if (gameState === 'RUNNER') {
-      if (this.jumpsLeft > 0) {
-        this.vy = this.jumpForce;
-        this.jumpsLeft--;
-        this.crouching = false;
-        createParticles(this.x + 25, this.y, '#94a3b8', 10);
-      }
-    } else if (gameState === 'COMBAT' && this.y >= GROUND_Y) {
-      this.vy = -560;
-      createParticles(this.x + 25, this.y + this.z, '#94a3b8', 8);
+    if (gameState !== 'RUNNER') return;
+    if (this.jumpsLeft > 0) {
+      this.vy = this.jumpForce;
+      this.jumpsLeft--;
+      this.crouching = false;
+      createParticles(this.x + 25, this.y, '#94a3b8', 12);
     }
   },
 
-  biteAttack() {
-    if (this.attackTimer > 0 || this.stamina < 15) return;
-    this.stamina -= 15;
-    this.attackTimer = 0.28;
-    createParticles(this.x + (this.facing === 1 ? 85 : -15), this.y + this.z - 28, '#f8fafc', 8, 180);
-
-    if (gameState === 'COMBAT' || gameState === 'RAID_INTRO') {
-      // Check hit against sheep
-      sheepList.forEach(s => {
-        if (s.alive && Math.abs(this.x + this.facing * 45 - s.x) < 70 && Math.abs(this.z - s.z) < 42) {
-          s.alive = false;
-          createParticles(s.x, GROUND_Y + s.z - 18, '#dc2626', 20);
-          this.heal(18);
-          addScore(5, 'SHEEP HUNTED', s.x, GROUND_Y + s.z, '#fbbf24');
-        }
-      });
-
-      // Check hit against farmers
-      farmers.forEach(f => {
-        const dist = Math.abs((this.x + this.facing * 50) - f.x);
-        const depthDist = Math.abs(this.z - f.z);
-        if (dist < 75 && depthDist < 42) {
-          const isBackstab = (this.facing === f.facing);
-          const dmg = isBackstab ? 40 : 25;
-          f.hp -= dmg;
-          f.hurtTimer = 0.25;
-          f.vx = this.facing * 220;
-          // Interrupt farmer's windup if backstabbed or staggered
-          if (isBackstab && f.state === 'WINDUP') {
-            f.state = 'CHASE';
-            addScore(3, 'COUNTER BITE!', f.x, GROUND_Y + f.z - 40, '#38bdf8');
-          } else {
-            addScore(2, isBackstab ? 'CRITICAL BITE' : 'SAVAGE BITE', f.x, GROUND_Y + f.z - 30, '#f59e0b');
-          }
-          createParticles(f.x, GROUND_Y + f.z - 35, '#ef4444', 16);
-          screenShake = 5;
-        }
-      });
+  crouchStart() {
+    if (gameState !== 'RUNNER') return;
+    this.crouching = true;
+    if (this.y < GROUND_Y) {
+      this.vy = Math.max(this.vy, 680); // Fast-fall dive
     }
   },
 
-  lungeDodge() {
-    if (this.lungeTimer > 0 || this.stamina < 28) return;
-    this.stamina -= 28;
-    this.lungeTimer = 0.32;
-    this.attackTimer = 0.28;
-    if (gameState === 'COMBAT') {
-      this.vx = this.facing * 540;
-    }
-    createParticles(this.x + 30, this.y + this.z - 20, '#38bdf8', 14);
+  crouchEnd() {
+    this.crouching = false;
   },
 
-  update(dt) {
-    this.stamina = Math.min(this.maxStamina, this.stamina + 26 * dt);
+  runnerLunge() {
+    if (gameState !== 'RUNNER') return;
+    if (this.lungeTimer > 0 || this.stamina < 20) return;
+    this.stamina -= 20;
+    this.lungeTimer = 0.34;
+    createParticles(this.x + 45, this.y - 24, '#38bdf8', 15);
+  },
+
+  updateRunner(dt) {
+    this.stamina = Math.min(this.maxStamina, this.stamina + 25 * dt);
     if (this.invincibleTimer > 0) this.invincibleTimer -= dt;
-    if (this.attackTimer > 0) this.attackTimer -= dt;
     if (this.lungeTimer > 0) this.lungeTimer -= dt;
 
-    // Vertical physics
     this.vy += this.gravity * dt;
     this.y += this.vy * dt;
+
     if (this.y >= GROUND_Y) {
       this.y = GROUND_Y;
       this.vy = 0;
       this.jumpsLeft = 2;
-    }
-
-    if (gameState === 'RUNNER') {
-      this.facing = 1;
-      this.z *= 0.85;
-      this.x += (130 - this.x) * 6 * dt;
-      this.crouching = keys.down && this.y >= GROUND_Y;
-      if (keys.down && this.y < GROUND_Y) {
-        this.vy += 1200 * dt;
-      }
       this.runCycle += dt * (gameSpeed * 0.033);
-    } else if (gameState === 'RAID_INTRO' || gameState === 'COMBAT') {
-      this.crouching = false;
-      const moveSpeed = this.lungeTimer > 0 ? 520 : 290;
-      let moveX = 0;
-      let moveZ = 0;
-
-      if (keys.left) { moveX -= 1; this.facing = -1; }
-      if (keys.right) { moveX += 1; this.facing = 1; }
-      if (keys.up) moveZ -= 1;
-      if (keys.down) moveZ += 1;
-
-      if (this.lungeTimer <= 0) {
-        this.vx = moveX * moveSpeed;
-        this.vz = moveZ * (moveSpeed * 0.65);
-      } else {
-        this.vx *= 0.92;
-      }
-
-      this.x = Math.max(50, Math.min(canvas.width - 90, this.x + this.vx * dt));
-      this.z = Math.max(-45, Math.min(65, this.z + this.vz * dt));
-
-      const isMoving = Math.abs(this.vx) > 10 || Math.abs(this.vz) > 10;
-      if (isMoving) {
-        this.runCycle += dt * 13;
-      } else {
-        this.runCycle += dt * 2.5;
-      }
+    } else {
+      this.runCycle += dt * 4;
     }
   },
 
@@ -598,18 +593,15 @@ const wolf = {
     const isAirborne = this.y < GROUND_Y;
     const angle = isAirborne ? (isFront ? -0.55 : 0.55) : Math.sin(this.runCycle + phaseOffset) * 0.65;
     const kneeBend = isAirborne ? 0.35 : (Math.cos(this.runCycle + phaseOffset) * 0.4 + 0.45);
+    const len = this.crouching ? 11 : 15;
 
-    const thighLen = this.crouching ? 11 : 15;
-    const shinLen = this.crouching ? 11 : 15;
-
-    const kneeX = hipX + Math.sin(angle) * thighLen;
-    const kneeY = hipY + Math.cos(angle) * thighLen;
+    const kneeX = hipX + Math.sin(angle) * len;
+    const kneeY = hipY + Math.cos(angle) * len;
     const footAngle = isFront ? angle + kneeBend * 0.7 : angle - kneeBend * 0.7;
-    const footX = kneeX + Math.sin(footAngle) * shinLen;
-    const footY = kneeY + Math.cos(footAngle) * shinLen;
+    const footX = kneeX + Math.sin(footAngle) * len;
+    const footY = kneeY + Math.cos(footAngle) * len;
 
     ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
     ctx.strokeStyle = colorUpper;
     ctx.lineWidth = 8;
     ctx.beginPath();
@@ -623,24 +615,16 @@ const wolf = {
     ctx.moveTo(kneeX, kneeY);
     ctx.lineTo(footX, footY);
     ctx.stroke();
-
-    ctx.fillStyle = colorLower;
-    ctx.beginPath();
-    ctx.ellipse(footX + 3, footY, 4.5, 2.5, 0, 0, Math.PI * 2);
-    ctx.fill();
   },
 
-  draw() {
+  drawSideView() {
     if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 16) % 2 === 0) return;
 
     ctx.save();
-    const renderY = this.y + this.z;
-    ctx.translate(this.x + 42, renderY);
-    ctx.scale(this.facing, 1);
-    ctx.translate(-42, 0);
+    ctx.translate(this.x, this.y);
 
     const isAirborne = this.y < GROUND_Y;
-    const crouchOffset = this.crouching ? 11 : 0;
+    const crouchY = this.crouching ? 12 : 0;
     const bounce = isAirborne ? 0 : Math.abs(Math.cos(this.runCycle)) * 4;
 
     // Ground Shadow
@@ -650,21 +634,19 @@ const wolf = {
     ctx.ellipse(42, 2, 42 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.translate(0, -bounce + crouchOffset);
+    ctx.translate(0, -bounce + crouchY);
 
-    // Lunge Streak Aura
     if (this.lungeTimer > 0) {
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
       ctx.beginPath();
-      ctx.ellipse(38, -26, 52, 20, 0, 0, Math.PI * 2);
+      ctx.ellipse(42, -24, 54, 20, 0, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Far-side Legs
     this.drawLimb(16, -25, Math.PI, false, '#262b33', '#181b20');
     this.drawLimb(56, -25, 0, true, '#262b33', '#181b20');
 
-    // Bushy Tail
+    // Tail
     const tailWag = Math.sin(this.runCycle) * 5;
     ctx.fillStyle = '#3b424d';
     ctx.beginPath();
@@ -674,12 +656,11 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
-    // Torso Multi-tone Coat
+    // Torso
     const bodyGrad = ctx.createLinearGradient(0, -45, 0, -14);
     bodyGrad.addColorStop(0, '#1e232a');
     bodyGrad.addColorStop(0.55, '#525b69');
     bodyGrad.addColorStop(1, '#cbd5e1');
-
     ctx.fillStyle = bodyGrad;
     ctx.beginPath();
     ctx.moveTo(10, -28);
@@ -690,36 +671,22 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
-    // Near-side Legs
     this.drawLimb(18, -24, 0.3, false, '#4b5563', '#94a3b8');
     this.drawLimb(58, -24, Math.PI + 0.3, true, '#4b5563', '#94a3b8');
 
-    // Head & Snarling Jaw during Bite
-    const jawOpen = this.attackTimer > 0 ? 6 : 0;
+    // Head
     ctx.fillStyle = '#47505e';
     ctx.beginPath();
     ctx.moveTo(54, -36);
     ctx.lineTo(62, -50);
     ctx.lineTo(74, -47);
     ctx.lineTo(89, -42);
-    ctx.lineTo(85, -36);
-    ctx.lineTo(72, -35);
+    ctx.lineTo(85, -34);
     ctx.lineTo(62, -28);
     ctx.closePath();
     ctx.fill();
 
-    // Lower Jaw & Fangs
-    ctx.fillStyle = '#cbd5e1';
-    ctx.beginPath();
-    ctx.moveTo(62, -28);
-    ctx.lineTo(74, -36 + jawOpen * 0.5);
-    ctx.lineTo(85, -35 + jawOpen);
-    ctx.lineTo(81, -31 + jawOpen);
-    ctx.lineTo(66, -30);
-    ctx.closePath();
-    ctx.fill();
-
-    // Ears
+    // Ears & Amber Eye
     ctx.fillStyle = '#2d333d';
     ctx.beginPath();
     ctx.moveTo(57, -44);
@@ -728,30 +695,24 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
-    // Glowing Eye
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(72, -43, 2.2, 0, Math.PI * 2);
+    ctx.arc(72, -43, 2.3, 0, Math.PI * 2);
     ctx.fill();
 
-    // Claw Slash Arc Effect when biting
-    if (this.attackTimer > 0.1) {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 3.5;
+    // Bite/Lunge Slash Arc
+    if (this.lungeTimer > 0.1) {
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.arc(82, -32, 22, -0.7, 0.8);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(245, 158, 11, 0.75)';
-      ctx.beginPath();
-      ctx.arc(87, -32, 22, -0.6, 0.7);
+      ctx.arc(85, -32, 24, -0.7, 0.8);
       ctx.stroke();
     }
-
     ctx.restore();
   },
 
-  getRunnerHitbox() {
-    const crouchShrink = this.crouching ? 14 : 0;
+  getHitbox() {
+    const crouchShrink = this.crouching ? 15 : 0;
     return {
       x: this.x + 14,
       y: this.y - 44 + crouchShrink,
@@ -761,79 +722,44 @@ const wolf = {
   }
 };
 
-// Environment Parallax Layers
-const stars = Array.from({ length: 50 }, () => ({
+// Parallax Background Layers
+const stars = Array.from({ length: 55 }, () => ({
   x: Math.random() * canvas.width,
   y: Math.random() * 230,
   r: Math.random() * 1.5 + 0.5
 }));
-
 const mountains = Array.from({ length: 8 }, (_, i) => ({
   x: i * 160,
   w: 230,
   h: 135 + (i % 3) * 30
 }));
-
 const bgTrees = Array.from({ length: 22 }, (_, i) => ({
   x: i * 55,
   h: 80 + (i % 4) * 20,
   w: 40
 }));
 
-// Spawn diverse realistic obstacles
 function spawnObstacle() {
   const roll = Math.random();
-  let obs;
-
-  if (roll < 0.26) {
-    // Steel Bear Trap (Low, wide, snaps shut)
-    obs = {
-      type: 'TRAP',
-      x: canvas.width + 60,
-      y: GROUND_Y,
-      width: 46,
-      height: 18,
-      damage: 28,
-      passed: false
-    };
-  } else if (roll < 0.52) {
-    // Wooden Ranch Fence (Can be smashed with Bite/Lunge for +3 skill points!)
-    obs = {
-      type: 'FENCE',
-      x: canvas.width + 60,
-      y: GROUND_Y,
-      width: 36,
-      height: 58,
-      damage: 22,
-      breakable: true,
-      passed: false
-    };
+  if (roll < 0.25) {
+    obstacles.push({ type: 'TRAP', x: canvas.width + 60, y: GROUND_Y, width: 46, height: 18, damage: 26, passed: false });
+  } else if (roll < 0.50) {
+    obstacles.push({ type: 'FENCE', x: canvas.width + 60, y: GROUND_Y, width: 38, height: 60, damage: 22, passed: false });
   } else if (roll < 0.76) {
-    // Swooping Bald Eagle (Can be ducked under or jumped over)
-    const highFlight = Math.random() > 0.45;
-    obs = {
+    const lowSwoop = Math.random() > 0.45;
+    obstacles.push({
       type: 'EAGLE',
       x: canvas.width + 60,
-      y: GROUND_Y - (highFlight ? 42 : 92), // 42 requires ducking or jumping
+      y: GROUND_Y - (lowSwoop ? 38 : 92), // 38 can be ducked under!
       width: 64,
       height: 34,
       damage: 24,
-      wingPhase: Math.random() * Math.PI * 2,
+      wingPhase: 0,
       passed: false
-    };
+    });
   } else {
-    // Jagged Mossy Boulder
-    obs = {
-      type: 'ROCK',
-      x: canvas.width + 60,
-      y: GROUND_Y,
-      width: 56,
-      height: 48,
-      damage: 25,
-      passed: false
-    };
+    obstacles.push({ type: 'ROCK', x: canvas.width + 60, y: GROUND_Y, width: 56, height: 48, damage: 25, passed: false });
   }
-  obstacles.push(obs);
 }
 
 function spawnFood() {
@@ -847,73 +773,633 @@ function spawnFood() {
   });
 }
 
-// Start the Pasture Sheep Raid & Farmer Ambush Scene
-function startPastureRaid() {
-  gameState = 'RAID_INTRO';
+// ==========================================
+// 3D WOLF POV COMBAT SYSTEM
+// ==========================================
+function start3DPovCombat() {
+  gameState = 'POV_COMBAT';
   obstacles = [];
   foods = [];
-  sheepList = [];
-  farmers = [];
+  povEnemies = [];
+  povSheep = [];
+  slashTrails = [];
 
-  modeBanner.textContent = 'SHEEP PASTURE REACHED! HUNT THE FLOCK!';
+  povWolf.lane = 0;
+  povWolf.visualLane = 0;
+  povWolf.action = 'IDLE';
+  povWolf.actionTimer = 0;
+  povWolf.pounceZoom = 0;
+
+  runnerHint.classList.add('hidden');
+  combatControls.classList.remove('hidden');
+  modeBanner.textContent = `SHEEP PASTURE AMBUSH (WAVE ${raidWave}) — WOLF 3D POV!`;
   modeBanner.style.opacity = '1';
 
-  // Spawn grazing sheep in 2.5D depth
-  for (let i = 0; i < 3; i++) {
-    sheepList.push({
-      x: 420 + i * 160,
-      z: (i - 1) * 28,
-      vx: 35,
-      alive: true,
-      legPhase: Math.random() * Math.PI
-    });
+  // Spawn frightened sheep in the 3D pasture
+  for (let i = -1; i <= 1; i++) {
+    if (Math.random() < 0.8) {
+      povSheep.push({
+        lane: i,
+        z: 0.35 + Math.random() * 0.25, // 0 = far horizon, 1 = close to wolf
+        alive: true,
+        hopPhase: Math.random() * Math.PI * 2
+      });
+    }
   }
 
-  // After 2.8 seconds of sheep hunting, angry farmers rush in!
-  setTimeout(() => {
-    if (gameState !== 'RAID_INTRO') return;
-    gameState = 'COMBAT';
-    modeBanner.textContent = `FARMER AMBUSH (WAVE ${raidWave})! DEFEAT THEM ALL!`;
-    spawnFarmersForWave(raidWave);
-  }, 2800);
-}
-
-function spawnFarmersForWave(wave) {
-  const count = Math.min(4, 1 + wave);
-  for (let i = 0; i < count; i++) {
-    const fromRight = i % 2 === 0;
-    const isHeavy = i === count - 1 && wave >= 2;
-    farmers.push({
-      type: isHeavy ? 'WOODSMAN' : 'PITCHFORK',
-      x: fromRight ? canvas.width + 40 + i * 50 : -50 - i * 50,
-      z: (i - 1) * 30,
-      vx: 0,
-      facing: fromRight ? -1 : 1,
-      hp: isHeavy ? 100 : 75,
-      maxHp: isHeavy ? 100 : 75,
-      state: 'CHASE', // 'CHASE', 'WINDUP', 'STRIKE', 'COOLDOWN'
-      stateTimer: 0,
+  // Spawn angry Farmers marching forward from the barn in 3D lanes
+  const farmerCount = Math.min(4, 1 + raidWave);
+  const usedLanes = [-1, 0, 1];
+  for (let i = 0; i < farmerCount; i++) {
+    const lane = usedLanes[i % 3];
+    const types = ['PITCHFORK', 'CLUB', 'TORCH'];
+    const type = types[(i + raidWave) % types.length];
+    const maxHp = type === 'CLUB' ? 115 : 85;
+    povEnemies.push({
+      type,
+      lane,
+      visualLane: lane,
+      z: 0.15 + i * 0.12, // Start in the distance and walk up to 0.82
+      hp: maxHp,
+      maxHp,
+      state: 'APPROACH', // 'APPROACH', 'IDLE', 'WINDUP', 'STRIKE', 'STUNNED'
+      stateTimer: 1.2 + i * 0.7,
       hurtTimer: 0,
-      walkCycle: Math.random() * Math.PI * 2
+      walkPhase: Math.random() * Math.PI * 2
     });
   }
+  updateHUD();
 }
 
-function updateHUD() {
-  const hpPct = Math.max(0, (wolf.hp / wolf.maxHp) * 100);
-  hpFill.style.width = `${hpPct}%`;
-  hpDamageFill.style.width = `${hpPct}%`;
-  hpText.textContent = `${Math.ceil(wolf.hp)} / ${wolf.maxHp}`;
-  staminaFill.style.width = `${(wolf.stamina / wolf.maxStamina) * 100}%`;
-  scoreDisplay.textContent = skillScore;
+function povDodge(dir) {
+  if (gameState !== 'POV_COMBAT' || povWolf.dodgeCooldown > 0) return;
+  povWolf.lane = Math.max(-1, Math.min(1, povWolf.lane + dir));
+  povWolf.dodgeCooldown = 0.22;
+  wolf.stamina = Math.max(0, wolf.stamina - 10);
+  createParticles(canvas.width / 2 - dir * 120, canvas.height - 90, '#38bdf8', 10);
+}
 
-  if (gameState === 'RUNNER') {
-    phaseDisplay.textContent = `NEXT PASTURE RAID: ${Math.max(0, Math.ceil(distanceToRaid))}m`;
-  } else {
-    phaseDisplay.textContent = `FARMERS REMAINING: ${farmers.length}`;
+function performPovAttack(type) {
+  if (gameState !== 'POV_COMBAT' || povWolf.actionTimer > 0) return;
+
+  if (type === 'BITE') {
+    if (wolf.stamina < 14) return;
+    wolf.stamina -= 14;
+    povWolf.action = 'BITE';
+    povWolf.actionDuration = 0.28;
+    povWolf.actionTimer = 0.28;
+    povWolf.jawSnap = 1;
+    screenShake = 6;
+    resolvePovHit({ lanes: [povWolf.lane], damage: 28, stun: false, label: 'FANG BITE', score: 2 });
+  } else if (type === 'CLAW') {
+    if (wolf.stamina < 24) return;
+    wolf.stamina -= 24;
+    povWolf.action = 'CLAW';
+    povWolf.actionDuration = 0.36;
+    povWolf.actionTimer = 0.36;
+    povWolf.leftClawSwipe = 1;
+    povWolf.rightClawSwipe = 1;
+    screenShake = 9;
+    // Add glowing claw slash marks across the 3D screen
+    slashTrails.push({ x1: 240, y1: 160, x2: 760, y2: 390, life: 0.35, color: '#fbbf24' });
+    slashTrails.push({ x1: 270, y1: 120, x2: 790, y2: 350, life: 0.35, color: '#f87171' });
+    // Hits current lane AND adjacent lanes!
+    const hitLanes = [povWolf.lane - 1, povWolf.lane, povWolf.lane + 1];
+    resolvePovHit({ lanes: hitLanes, damage: 22, stun: false, label: 'CLAW SWIPE', score: 2 });
+  } else if (type === 'POUNCE') {
+    if (wolf.stamina < 38) return;
+    wolf.stamina -= 38;
+    povWolf.action = 'POUNCE';
+    povWolf.actionDuration = 0.46;
+    povWolf.actionTimer = 0.46;
+    povWolf.pounceZoom = 1;
+    povWolf.jawSnap = 1;
+    screenShake = 15;
+    slashTrails.push({ x1: 420, y1: 140, x2: 580, y2: 380, life: 0.4, color: '#c084fc' });
+    slashTrails.push({ x1: 580, y1: 140, x2: 420, y2: 380, life: 0.4, color: '#c084fc' });
+    resolvePovHit({ lanes: [povWolf.lane], damage: 52, stun: true, label: 'THROAT POUNCE!', score: 4 });
+  } else if (type === 'HOWL') {
+    if (wolf.rage < 50) {
+      addPopup(canvas.width / 2 - 60, 300, 'NEED 50% RAGE!', '#38bdf8', 16);
+      return;
+    }
+    wolf.rage = 0;
+    povWolf.action = 'HOWL';
+    povWolf.actionDuration = 0.6;
+    povWolf.actionTimer = 0.6;
+    screenShake = 12;
+    wolf.heal(30);
+    wolf.stamina = 100;
+    // Stun all farmers in the arena
+    povEnemies.forEach(f => {
+      f.state = 'STUNNED';
+      f.stateTimer = 2.0;
+      f.hurtTimer = 0.4;
+    });
+    addScore(3, 'ALPHA HOWL STUN!', canvas.width / 2 - 50, 180, '#38bdf8');
+  }
+  updateHUD();
+}
+
+function resolvePovHit({ lanes, damage, stun, label, score }) {
+  // Check sheep in target lane
+  povSheep.forEach(s => {
+    if (s.alive && lanes.includes(s.lane)) {
+      s.alive = false;
+      const sx = canvas.width / 2 + s.lane * 220;
+      createParticles(sx, 310, '#dc2626', 22);
+      wolf.heal(20);
+      addScore(5, 'SHEEP DEVOURED!', sx - 40, 260, '#22c55e');
+    }
+  });
+
+  // Check farmers in target lanes
+  let hitAny = false;
+  povEnemies.forEach(f => {
+    if (lanes.includes(f.lane) && f.z > 0.45) {
+      hitAny = true;
+      const isCounter = f.state === 'WINDUP';
+      const finalDmg = isCounter ? Math.round(damage * 1.4) : damage;
+      f.hp -= finalDmg;
+      f.hurtTimer = 0.3;
+
+      const fx = canvas.width / 2 + f.lane * 240;
+      createParticles(fx, 250, '#ef4444', 20);
+
+      if (stun || isCounter) {
+        f.state = 'STUNNED';
+        f.stateTimer = 1.4;
+        addScore(score + 1, isCounter ? 'COUNTER INTERRUPT!' : label, fx - 40, 190, '#c084fc');
+      } else {
+        addScore(score, label, fx - 30, 200, '#fbbf24');
+      }
+    }
+  });
+}
+
+function updatePovCombat(dt) {
+  wolf.stamina = Math.min(wolf.maxStamina, wolf.stamina + 22 * dt);
+  if (wolf.invincibleTimer > 0) wolf.invincibleTimer -= dt;
+  if (povWolf.dodgeCooldown > 0) povWolf.dodgeCooldown -= dt;
+
+  povWolf.breathCycle += dt * 4;
+  povWolf.visualLane += (povWolf.lane - povWolf.visualLane) * 12 * dt;
+
+  if (povWolf.actionTimer > 0) {
+    povWolf.actionTimer -= dt;
+    if (povWolf.actionTimer <= 0) {
+      povWolf.action = 'IDLE';
+    }
+  }
+  povWolf.pounceZoom *= Math.pow(0.05, dt);
+  povWolf.jawSnap *= Math.pow(0.04, dt);
+  povWolf.leftClawSwipe *= Math.pow(0.04, dt);
+  povWolf.rightClawSwipe *= Math.pow(0.04, dt);
+
+  // Update Slash Trails
+  for (let i = slashTrails.length - 1; i >= 0; i--) {
+    slashTrails[i].life -= dt;
+    if (slashTrails[i].life <= 0) slashTrails.splice(i, 1);
+  }
+
+  // Update Sheep
+  povSheep.forEach(s => {
+    if (!s.alive) return;
+    s.hopPhase += dt * 8;
+  });
+
+  // Update Farmers in 3D Perspective
+  for (let i = povEnemies.length - 1; i >= 0; i--) {
+    const f = povEnemies[i];
+    if (f.hp <= 0) {
+      const fx = canvas.width / 2 + f.lane * 240;
+      createParticles(fx, 260, '#fbbf24', 30);
+      addScore(10, 'FARMER DEFEATED!', fx - 50, 180, '#f59e0b');
+      wolf.heal(15);
+      povEnemies.splice(i, 1);
+      continue;
+    }
+
+    if (f.hurtTimer > 0) f.hurtTimer -= dt;
+    f.visualLane += (f.lane - f.visualLane) * 8 * dt;
+
+    if (f.state === 'APPROACH') {
+      f.z = Math.min(0.82, f.z + 0.35 * dt);
+      f.walkPhase += dt * 10;
+      if (f.z >= 0.82) {
+        f.state = 'IDLE';
+        f.stateTimer = 0.8 + Math.random() * 0.8;
+      }
+    } else if (f.state === 'IDLE') {
+      f.walkPhase += dt * 3;
+      f.stateTimer -= dt;
+      if (f.stateTimer <= 0) {
+        // Occasionally step into the wolf's lane to pressure the player
+        if (f.lane !== povWolf.lane && Math.random() < 0.65) {
+          const targetLane = povWolf.lane;
+          const occupied = povEnemies.some(other => other !== f && other.lane === targetLane);
+          if (!occupied) f.lane = targetLane;
+        }
+        f.state = 'WINDUP';
+        f.stateTimer = f.type === 'CLUB' ? 0.85 : 0.68; // Red telegraph window
+      }
+    } else if (f.state === 'WINDUP') {
+      f.stateTimer -= dt;
+      if (f.stateTimer <= 0) {
+        f.state = 'STRIKE';
+        f.stateTimer = 0.25;
+        // Did the farmer hit the wolf's current lane?
+        if (f.lane === povWolf.lane) {
+          const dmg = f.type === 'CLUB' ? 28 : (f.type === 'TORCH' ? 24 : 20);
+          wolf.takeDamage(dmg);
+        } else {
+          // Player dodged the attack by switching lanes!
+          addScore(2, 'DODGED STRIKE!', canvas.width / 2, 240, '#38bdf8');
+        }
+      }
+    } else if (f.state === 'STRIKE') {
+      f.stateTimer -= dt;
+      if (f.stateTimer <= 0) {
+        f.state = 'IDLE';
+        f.stateTimer = 1.1 + Math.random() * 0.7;
+      }
+    } else if (f.state === 'STUNNED') {
+      f.stateTimer -= dt;
+      if (f.stateTimer <= 0) {
+        f.state = 'IDLE';
+        f.stateTimer = 0.7;
+      }
+    }
+  }
+
+  // All farmers defeated -> Return seamlessly to Runner!
+  if (povEnemies.length === 0) {
+    gameState = 'RUNNER';
+    raidWave++;
+    distanceToRaid = 450 + raidWave * 80;
+    combatControls.classList.add('hidden');
+    runnerHint.classList.remove('hidden');
+    addScore(15, 'PASTURE CLEARED!', canvas.width / 2 - 60, 180, '#22c55e');
+    modeBanner.textContent = 'FARMERS DEFEATED! BACK TO THE WILDERNESS!';
+    setTimeout(() => {
+      if (gameState === 'RUNNER') modeBanner.style.opacity = '0';
+    }, 2200);
   }
 }
 
+// ==========================================
+// 3D POV RENDERER (Pasture, Farmers, & Wolf Claws/Snout)
+// ==========================================
+function draw3DPovScene() {
+  const horizonY = 195;
+  const centerX = canvas.width / 2 - povWolf.visualLane * 95;
+  const zoomOffset = povWolf.pounceZoom * 35;
+
+  // Night Sky & Barn Silhouette on Horizon
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+  skyGrad.addColorStop(0, '#04070e');
+  skyGrad.addColorStop(1, '#1e1b4b');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, canvas.width, horizonY);
+
+  // Full Moon over the Farm
+  ctx.fillStyle = '#fef3c7';
+  ctx.beginPath();
+  ctx.arc(centerX + 260, 75, 36, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Distant Wooden Barn Silhouette
+  ctx.fillStyle = '#1c1917';
+  ctx.beginPath();
+  ctx.moveTo(centerX - 110, horizonY);
+  ctx.lineTo(centerX - 110, horizonY - 55);
+  ctx.lineTo(centerX - 75, horizonY - 90);
+  ctx.lineTo(centerX, horizonY - 110);
+  ctx.lineTo(centerX + 75, horizonY - 90);
+  ctx.lineTo(centerX + 110, horizonY - 55);
+  ctx.lineTo(centerX + 110, horizonY);
+  ctx.closePath();
+  ctx.fill();
+
+  // Glowing Barn Window
+  ctx.fillStyle = '#f59e0b';
+  ctx.fillRect(centerX - 16, horizonY - 75, 32, 24);
+
+  // 3D Perspective Pasture Ground
+  const groundGrad = ctx.createLinearGradient(0, horizonY, 0, canvas.height);
+  groundGrad.addColorStop(0, '#0f1f17');
+  groundGrad.addColorStop(0.5, '#1a3326');
+  groundGrad.addColorStop(1, '#09120e');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
+
+  // Perspective 3D Lane Grid Lines
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
+  ctx.lineWidth = 2;
+  for (let laneEdge = -1.5; laneEdge <= 1.5; laneEdge += 1) {
+    ctx.beginPath();
+    ctx.moveTo(centerX + laneEdge * 45, horizonY);
+    ctx.lineTo(canvas.width / 2 + (laneEdge - povWolf.visualLane * 0.35) * 340, canvas.height);
+    ctx.stroke();
+  }
+
+  // Sort 3D Sheep & Farmers by depth (Z)
+  const renderList = [];
+  povSheep.forEach(s => {
+    if (s.alive) renderList.push({ z: s.z, type: 'SHEEP', obj: s });
+  });
+  povEnemies.forEach(f => {
+    renderList.push({ z: f.z, type: 'FARMER', obj: f });
+  });
+  renderList.sort((a, b) => a.z - b.z);
+
+  renderList.forEach(item => {
+    if (item.type === 'SHEEP') draw3DSheep(item.obj, horizonY, centerX);
+    else draw3DFarmer(item.obj, horizonY, centerX, zoomOffset);
+  });
+
+  // Draw Slash Trails
+  slashTrails.forEach(t => {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, t.life * 3);
+    ctx.strokeStyle = t.color;
+    ctx.lineWidth = 9;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(t.x1, t.y1);
+    ctx.lineTo(t.x2, t.y2);
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // Draw First-Person / Over-the-Shoulder 3D Wolf Head, Fangs & Front Claws
+  drawFirstPersonWolfOverlay();
+}
+
+function draw3DSheep(s, horizonY, centerX) {
+  const scale = 0.35 + s.z * 0.85;
+  const relLane = s.lane - povWolf.visualLane * 0.45;
+  const screenX = centerX + relLane * (280 * scale);
+  const screenY = horizonY + s.z * 230 + Math.abs(Math.sin(s.hopPhase)) * 8;
+
+  ctx.save();
+  ctx.translate(screenX, screenY);
+  ctx.scale(scale, scale);
+
+  // Fluffy Wool Body facing player
+  ctx.fillStyle = '#e2e8f0';
+  ctx.beginPath();
+  ctx.arc(0, -28, 26, 0, Math.PI * 2);
+  ctx.arc(-18, -24, 18, 0, Math.PI * 2);
+  ctx.arc(18, -24, 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#1e293b';
+  ctx.beginPath();
+  ctx.ellipse(0, -32, 12, 15, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Prompt if in wolf's current lane
+  if (s.lane === povWolf.lane) {
+    ctx.fillStyle = '#22c55e';
+    ctx.font = '900 13px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('BITE TO EAT (+20 HP)', 0, -68);
+  }
+  ctx.restore();
+}
+
+function draw3DFarmer(f, horizonY, centerX, zoomOffset) {
+  const scale = 0.35 + f.z * 0.95 + zoomOffset * 0.004;
+  const relLane = f.visualLane - povWolf.visualLane * 0.5;
+  const screenX = canvas.width / 2 + relLane * 260;
+  const screenY = horizonY + f.z * 255;
+
+  ctx.save();
+  ctx.translate(screenX, screenY);
+  ctx.scale(scale, scale);
+
+  const bob = Math.sin(f.walkPhase) * 5;
+
+  // Red Ground Danger Zone when Farmer is Winding Up an Attack!
+  if (f.state === 'WINDUP') {
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.38)';
+    ctx.beginPath();
+    ctx.ellipse(0, 8, 72, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#fef08a';
+    ctx.font = '900 18px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚠️ DODGE OR POUNCE!', 0, -175);
+  } else if (f.state === 'STUNNED') {
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '900 16px Segoe UI';
+    ctx.textAlign = 'center';
+    ctx.fillText('💫 STUNNED!', 0, -170);
+  }
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 42, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.translate(0, bob);
+
+  // Farmer HP Bar
+  ctx.fillStyle = 'rgba(0,0,0,0.8)';
+  ctx.fillRect(-38, -155, 76, 9);
+  ctx.fillStyle = f.state === 'STUNNED' ? '#38bdf8' : '#ef4444';
+  ctx.fillRect(-36, -153, 72 * Math.max(0, f.hp / f.maxHp), 5);
+
+  // Boots & Legs
+  ctx.fillStyle = '#1e3a8a';
+  ctx.fillRect(-20, -55, 15, 55);
+  ctx.fillRect(5, -55, 15, 55);
+
+  // Torso (Flannel Shirt & Denim Overalls facing the Wolf)
+  ctx.fillStyle = f.hurtTimer > 0 ? '#fca5a5' : (f.type === 'CLUB' ? '#7f1d1d' : '#b45309');
+  ctx.beginPath();
+  ctx.roundRect(-32, -112, 64, 62, 10);
+  ctx.fill();
+
+  ctx.fillStyle = '#1d4ed8';
+  ctx.fillRect(-22, -92, 44, 42);
+
+  // Head & Angry Face looking straight at the Wolf
+  ctx.fillStyle = '#fed7aa';
+  ctx.beginPath();
+  ctx.arc(0, -126, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Angry Eyebrows & Eyes
+  ctx.strokeStyle = '#1c1917';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-9, -131); ctx.lineTo(-3, -128);
+  ctx.moveTo(9, -131);  ctx.lineTo(3, -128);
+  ctx.stroke();
+
+  // Wide Brim Straw Hat
+  ctx.fillStyle = '#eab308';
+  ctx.beginPath();
+  ctx.ellipse(0, -138, 30, 7, 0, 0, Math.PI * 2);
+  ctx.fillRect(-16, -149, 32, 12);
+  ctx.fill();
+
+  // Weapon (Pitchfork / Heavy Club / Torch)
+  ctx.save();
+  const strikeScale = f.state === 'STRIKE' ? 1.45 : (f.state === 'WINDUP' ? 0.85 : 1);
+  const weaponRaise = f.state === 'WINDUP' ? -28 : (f.state === 'STRIKE' ? 24 : 0);
+  ctx.translate(34, -85 + weaponRaise);
+  ctx.scale(strikeScale, strikeScale);
+
+  // Wooden Handle
+  ctx.strokeStyle = '#78350f';
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(0, 35);
+  ctx.lineTo(-8, -45);
+  ctx.stroke();
+
+  if (f.type === 'PITCHFORK') {
+    // 3 Steel Prongs pointed at camera
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-20, -45); ctx.lineTo(4, -45);
+    ctx.moveTo(-20, -45); ctx.lineTo(-22, -70);
+    ctx.moveTo(-8, -45);  ctx.lineTo(-8, -74);
+    ctx.moveTo(4, -45);   ctx.lineTo(6, -70);
+    ctx.stroke();
+  } else if (f.type === 'CLUB') {
+    ctx.fillStyle = '#451a03';
+    ctx.beginPath();
+    ctx.ellipse(-8, -58, 14, 24, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // Flaming Torch
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.arc(-8, -56, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(-8, -54, 8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+  ctx.restore();
+}
+
+function drawFirstPersonWolfOverlay() {
+  ctx.save();
+  const breath = Math.sin(povWolf.breathCycle) * 5;
+  const lungeY = -povWolf.pounceZoom * 65 - povWolf.jawSnap * 35;
+  const guardY = povWolf.bracing ? 25 : 0;
+
+  // Target Reticle in center of wolf's current lane
+  const reticleX = canvas.width / 2 + (povWolf.lane - povWolf.visualLane) * 180;
+  ctx.strokeStyle = 'rgba(251, 191, 36, 0.55)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(reticleX, 275, 28, 0, Math.PI * 2);
+  ctx.moveTo(reticleX - 36, 275); ctx.lineTo(reticleX - 18, 275);
+  ctx.moveTo(reticleX + 18, 275); ctx.lineTo(reticleX + 36, 275);
+  ctx.stroke();
+
+  // Left Wolf Foreleg & Razor Claws
+  ctx.save();
+  const leftSwipeX = povWolf.leftClawSwipe * 160;
+  const leftSwipeY = -povWolf.leftClawSwipe * 130;
+  ctx.translate(250 + leftSwipeX, canvas.height - 30 + breath + leftSwipeY + lungeY + guardY);
+  ctx.rotate(0.25 + povWolf.leftClawSwipe * 0.45);
+
+  // Fur Arm
+  ctx.fillStyle = '#374151';
+  ctx.beginPath();
+  ctx.roundRect(-38, -95, 76, 140, 30);
+  ctx.fill();
+
+  // Sharp White Claws
+  ctx.fillStyle = '#f8fafc';
+  [-22, -7, 8, 23].forEach(cx => {
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, -90);
+    ctx.lineTo(cx, -122);
+    ctx.lineTo(cx + 5, -90);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  // Right Wolf Foreleg & Razor Claws
+  ctx.save();
+  const rightSwipeX = -povWolf.rightClawSwipe * 160;
+  const rightSwipeY = -povWolf.rightClawSwipe * 130;
+  ctx.translate(canvas.width - 250 + rightSwipeX, canvas.height - 30 + breath + rightSwipeY + lungeY + guardY);
+  ctx.rotate(-0.25 - povWolf.rightClawSwipe * 0.45);
+
+  ctx.fillStyle = '#374151';
+  ctx.beginPath();
+  ctx.roundRect(-38, -95, 76, 140, 30);
+  ctx.fill();
+
+  ctx.fillStyle = '#f8fafc';
+  [-22, -7, 8, 23].forEach(cx => {
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, -90);
+    ctx.lineTo(cx, -122);
+    ctx.lineTo(cx + 5, -90);
+    ctx.fill();
+  });
+  ctx.restore();
+
+  // First-Person Wolf Snout & Snarling Fangs at Bottom Center
+  ctx.save();
+  ctx.translate(canvas.width / 2, canvas.height + 10 + breath + lungeY + guardY);
+
+  // Snout Bridge
+  ctx.fillStyle = '#1f2937';
+  ctx.beginPath();
+  ctx.moveTo(-85, 0);
+  ctx.lineTo(-48, -95);
+  ctx.lineTo(48, -95);
+  ctx.lineTo(85, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Snarling Upper & Lower Fangs when Biting/Pouncing
+  if (povWolf.jawSnap > 0.08) {
+    const snapOpen = povWolf.jawSnap * 55;
+    ctx.fillStyle = '#991b1b';
+    ctx.beginPath();
+    ctx.ellipse(0, -85 - snapOpen * 0.5, 58, 28 + snapOpen * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Canine Fangs
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(-42, -95 - snapOpen); ctx.lineTo(-34, -62 - snapOpen * 0.5); ctx.lineTo(-26, -95 - snapOpen);
+    ctx.moveTo(42, -95 - snapOpen);  ctx.lineTo(34, -62 - snapOpen * 0.5);  ctx.lineTo(26, -95 - snapOpen);
+    ctx.fill();
+  }
+
+  // Black Wolf Nose Tip
+  ctx.fillStyle = '#090d16';
+  ctx.beginPath();
+  ctx.ellipse(0, -95, 22, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+  ctx.restore();
+}
+
+// ==========================================
+// RUNNER UPDATE & RENDER
+// ==========================================
 function checkOverlap(a, b) {
   return (
     a.x < b.x + b.width &&
@@ -923,17 +1409,16 @@ function checkOverlap(a, b) {
   );
 }
 
-function updateRunner(dt) {
-  gameSpeed = Math.min(680, gameSpeed + dt * 6);
-  const metersRun = (gameSpeed * dt) * 0.045;
-  distanceToRaid -= metersRun;
+function updateRunnerPhase(dt) {
+  wolf.updateRunner(dt);
+  gameSpeed = Math.min(680, gameSpeed + dt * 6.5);
+  distanceToRaid -= (gameSpeed * dt) * 0.045;
 
   if (distanceToRaid <= 0) {
-    startPastureRaid();
+    start3DPovCombat();
     return;
   }
 
-  // Scroll parallax
   mountains.forEach(m => {
     m.x -= gameSpeed * 0.12 * dt;
     if (m.x + m.w < -40) m.x = canvas.width + 60;
@@ -943,19 +1428,18 @@ function updateRunner(dt) {
     if (t.x < -60) t.x = canvas.width + 40;
   });
 
-  // Obstacles
   spawnObsTimer -= dt;
   if (spawnObsTimer <= 0) {
     spawnObstacle();
-    spawnObsTimer = Math.max(0.68, 1.45 - gameSpeed * 0.0009 + Math.random() * 0.55);
+    spawnObsTimer = Math.max(0.66, 1.42 - gameSpeed * 0.0009 + Math.random() * 0.55);
   }
 
-  const wolfBox = wolf.getRunnerHitbox();
+  const wolfBox = wolf.getHitbox();
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
-    const speedMult = obs.type === 'EAGLE' ? 1.25 : 1;
-    obs.x -= gameSpeed * speedMult * dt;
+    const mult = obs.type === 'EAGLE' ? 1.25 : 1;
+    obs.x -= gameSpeed * mult * dt;
     if (obs.type === 'EAGLE') obs.wingPhase += dt * 12;
 
     const obsBox = {
@@ -965,46 +1449,42 @@ function updateRunner(dt) {
       height: obs.height - 8
     };
 
-    // Smash wooden fences if wolf uses Bite or Lunge!
-    if (obs.type === 'FENCE' && (wolf.attackTimer > 0 || wolf.lungeTimer > 0)) {
-      const attackBox = { x: wolf.x + 30, y: wolf.y - 50, width: 75, height: 55 };
-      if (checkOverlap(attackBox, obsBox)) {
-        createParticles(obs.x + 15, obs.y - 25, '#b45309', 22);
-        addScore(3, 'FENCE SMASH!', obs.x, obs.y - 30, '#fbbf24');
-        screenShake = 5;
+    // Smash wooden fence if lunging
+    if (obs.type === 'FENCE' && wolf.lungeTimer > 0) {
+      const lungeBox = { x: wolf.x + 20, y: wolf.y - 50, width: 85, height: 55 };
+      if (checkOverlap(lungeBox, obsBox)) {
+        createParticles(obs.x + 15, obs.y - 25, '#b45309', 24);
+        addScore(3, 'FENCE SMASH!', obs.x, obs.y - 45, '#fbbf24');
+        screenShake = 7;
         obstacles.splice(i, 1);
         continue;
       }
     }
 
-    // Obstacle collision
     if (checkOverlap(wolfBox, obsBox)) {
       wolf.takeDamage(obs.damage);
       obstacles.splice(i, 1);
       continue;
     }
 
-    // Skill-based Near-Miss Detection when passing an obstacle cleanly
+    // Skill-based Near-Miss Scoring
     if (!obs.passed && obs.x + obs.width < wolf.x) {
       obs.passed = true;
-      const vertClearance = Math.abs((wolf.y - 20) - (obs.y - obs.height / 2));
-      if (vertClearance < 58) {
-        addScore(2, 'CLOSE DODGE!', wolf.x + 30, wolf.y - 35, '#38bdf8');
+      const vertDist = Math.abs((wolf.y - 20) - (obs.y - obs.height / 2));
+      if (vertDist < 56) {
+        addScore(2, 'CLOSE DODGE!', wolf.x + 30, wolf.y - 45, '#38bdf8');
       } else {
-        addScore(1, 'CLEAN EVADE', wolf.x + 30, wolf.y - 35, '#a3e635');
+        addScore(1, 'CLEAN EVADE', wolf.x + 30, wolf.y - 45, '#a3e635');
       }
     }
 
-    if (obs.x + obs.width < -80) {
-      obstacles.splice(i, 1);
-    }
+    if (obs.x + obs.width < -80) obstacles.splice(i, 1);
   }
 
-  // Foods (Steaks restore HP + grant +2 skill points)
   spawnFoodTimer -= dt;
   if (spawnFoodTimer <= 0) {
     spawnFood();
-    spawnFoodTimer = 2.2 + Math.random() * 1.8;
+    spawnFoodTimer = 2.2 + Math.random() * 1.6;
   }
 
   for (let i = foods.length - 1; i >= 0; i--) {
@@ -1016,7 +1496,7 @@ function updateRunner(dt) {
     const foodBox = { x: f.x - f.radius, y: f.y - f.radius, width: f.radius * 2, height: f.radius * 2 };
     if (checkOverlap(wolfBox, foodBox)) {
       wolf.heal(14);
-      addScore(2, 'PREY MEAT', f.x, f.y, '#fbbf24');
+      addScore(2, 'PREY MEAT', f.x, f.y - 20, '#fbbf24');
       createParticles(f.x, f.y, '#f59e0b', 14);
       foods.splice(i, 1);
       continue;
@@ -1025,129 +1505,7 @@ function updateRunner(dt) {
   }
 }
 
-function updateCombat(dt) {
-  // Sheep flee behavior
-  sheepList.forEach(s => {
-    if (!s.alive) return;
-    const dir = s.x > wolf.x ? 1 : -1;
-    s.x += dir * 65 * dt;
-    s.x = Math.max(80, Math.min(canvas.width - 80, s.x));
-    s.legPhase += dt * 9;
-  });
-
-  if (gameState !== 'COMBAT') return;
-
-  // Farmer AI & Combat State Machine
-  for (let i = farmers.length - 1; i >= 0; i--) {
-    const f = farmers[i];
-    if (f.hp <= 0) {
-      createParticles(f.x, GROUND_Y + f.z - 35, '#fbbf24', 25);
-      addScore(10, 'FARMER DEFEATED!', f.x, GROUND_Y + f.z - 45, '#f59e0b');
-      wolf.heal(15);
-      farmers.splice(i, 1);
-      continue;
-    }
-
-    if (f.hurtTimer > 0) {
-      f.hurtTimer -= dt;
-      f.x += f.vx * dt;
-      f.vx *= 0.85;
-      continue;
-    }
-
-    const dx = (wolf.x + 35) - f.x;
-    const dz = wolf.z - f.z;
-
-    if (f.state === 'CHASE') {
-      f.facing = dx >= 0 ? 1 : -1;
-      const moveSpd = f.type === 'WOODSMAN' ? 125 : 155;
-      if (Math.abs(dx) > 62) f.x += Math.sign(dx) * moveSpd * dt;
-      if (Math.abs(dz) > 10) f.z += Math.sign(dz) * (moveSpd * 0.55) * dt;
-      f.walkCycle += dt * 8;
-
-      // Start telegraph attack when in range
-      if (Math.abs(dx) <= 72 && Math.abs(dz) <= 28) {
-        f.state = 'WINDUP';
-        f.stateTimer = f.type === 'WOODSMAN' ? 0.65 : 0.48;
-      }
-    } else if (f.state === 'WINDUP') {
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        f.state = 'STRIKE';
-        f.stateTimer = 0.18;
-        // Check if wolf is in the strike zone
-        const reach = f.type === 'WOODSMAN' ? 80 : 92;
-        const hitX = f.x + f.facing * (reach * 0.55);
-        if (Math.abs((wolf.x + 35) - hitX) < reach * 0.55 && Math.abs(wolf.z - f.z) < 34 && wolf.y > GROUND_Y - 45) {
-          wolf.takeDamage(f.type === 'WOODSMAN' ? 28 : 20, f.x);
-        }
-      }
-    } else if (f.state === 'STRIKE') {
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        f.state = 'COOLDOWN';
-        f.stateTimer = 0.65;
-      }
-    } else if (f.state === 'COOLDOWN') {
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        f.state = 'CHASE';
-      }
-    }
-  }
-
-  // Victory over farmers -> Return to Runner!
-  if (farmers.length === 0) {
-    gameState = 'RUNNER';
-    raidWave++;
-    distanceToRaid = 500 + raidWave * 100;
-    addScore(15, 'RAID SURVIVED!', canvas.width / 2, 180, '#22c55e');
-    modeBanner.textContent = 'AMBUSH CLEARED! BACK ON THE RUN!';
-    setTimeout(() => {
-      if (gameState === 'RUNNER') modeBanner.style.opacity = '0';
-    }, 2200);
-  }
-}
-
-function triggerGameOver() {
-  gameState = 'GAMEOVER';
-  modeBanner.style.opacity = '0';
-  overlayTitle.textContent = 'THE ALPHA HAS FALLEN';
-  guideGrid.innerHTML = `
-    <div class="guide-col" style="grid-column: span 2; text-align: center;">
-      <h3>FINAL SKILL REPORT</h3>
-      <p style="font-size: 20px; color: #f8fafc; margin-top: 8px;">
-        Total Skill Score: <strong style="color: #fbbf24;">${skillScore}</strong> &bull;
-        Farmer Raids Survived: <strong style="color: #38bdf8;">${raidWave - 1}</strong>
-      </p>
-    </div>
-  `;
-  startBtn.textContent = 'HUNT AGAIN';
-  overlay.classList.remove('hidden');
-}
-
-function resetGame() {
-  wolf.reset();
-  skillScore = 0;
-  comboMultiplier = 1;
-  raidWave = 1;
-  distanceToRaid = 500;
-  gameSpeed = 420;
-  obstacles = [];
-  foods = [];
-  sheepList = [];
-  farmers = [];
-  popups = [];
-  particles = [];
-  spawnObsTimer = 1.0;
-  spawnFoodTimer = 1.8;
-  modeBanner.style.opacity = '0';
-  gameState = 'RUNNER';
-  updateHUD();
-}
-
-// Drawing Functions
-function drawBackground() {
+function drawRunnerScene() {
   const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
   skyGrad.addColorStop(0, '#04070e');
   skyGrad.addColorStop(0.55, '#0d192b');
@@ -1155,7 +1513,6 @@ function drawBackground() {
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, canvas.width, GROUND_Y);
 
-  // Stars & Moon
   ctx.fillStyle = '#fff';
   stars.forEach(s => {
     ctx.beginPath();
@@ -1163,21 +1520,11 @@ function drawBackground() {
     ctx.fill();
   });
 
-  const moonX = 820, moonY = 85;
-  const halo = ctx.createRadialGradient(moonX, moonY, 30, moonX, moonY, 110);
-  halo.addColorStop(0, 'rgba(254, 243, 199, 0.3)');
-  halo.addColorStop(1, 'rgba(254, 243, 199, 0)');
-  ctx.fillStyle = halo;
-  ctx.beginPath();
-  ctx.arc(moonX, moonY, 110, 0, Math.PI * 2);
-  ctx.fill();
-
   ctx.fillStyle = '#fef3c7';
   ctx.beginPath();
-  ctx.arc(moonX, moonY, 36, 0, Math.PI * 2);
+  ctx.arc(820, 85, 36, 0, Math.PI * 2);
   ctx.fill();
 
-  // Mountains
   mountains.forEach(m => {
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
@@ -1188,7 +1535,6 @@ function drawBackground() {
     ctx.fill();
   });
 
-  // Pine Forest
   ctx.fillStyle = '#09111e';
   bgTrees.forEach(t => {
     ctx.beginPath();
@@ -1199,231 +1545,65 @@ function drawBackground() {
     ctx.fill();
   });
 
-  // 2.5D Pasture Ground Plane
-  const groundGrad = ctx.createLinearGradient(0, GROUND_Y - 50, 0, canvas.height);
-  groundGrad.addColorStop(0, '#14261c');
-  groundGrad.addColorStop(0.3, '#1b2e23');
-  groundGrad.addColorStop(1, '#090f0d');
-  ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, GROUND_Y - 45, canvas.width, canvas.height - GROUND_Y + 45);
+  ctx.fillStyle = '#14261c';
+  ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+  ctx.fillStyle = '#2d4a43';
+  ctx.fillRect(0, GROUND_Y, canvas.width, 5);
 
-  // Pasture wooden background rail during Combat
-  if (gameState === 'RAID_INTRO' || gameState === 'COMBAT') {
-    ctx.strokeStyle = '#451a03';
-    ctx.lineWidth = 5;
-    for (let x = 20; x < canvas.width; x += 90) {
-      ctx.strokeRect(x, GROUND_Y - 68, 90, 26);
-    }
-  }
-}
-
-function drawObstacle(obs) {
-  ctx.save();
-  ctx.translate(obs.x, obs.y);
-
-  if (obs.type === 'TRAP') {
-    // Steel Bear Trap with serrated jaws
-    ctx.fillStyle = '#64748b';
-    ctx.fillRect(0, -6, obs.width, 6);
-    ctx.fillStyle = '#94a3b8';
-    for (let tx = 4; tx < obs.width - 4; tx += 8) {
+  // Draw Obstacles
+  obstacles.forEach(obs => {
+    ctx.save();
+    ctx.translate(obs.x, obs.y);
+    if (obs.type === 'TRAP') {
+      ctx.fillStyle = '#64748b';
+      ctx.fillRect(0, -6, obs.width, 6);
+      ctx.fillStyle = '#cbd5e1';
+      for (let tx = 4; tx < obs.width - 4; tx += 8) {
+        ctx.beginPath();
+        ctx.moveTo(tx, -6); ctx.lineTo(tx + 4, -18); ctx.lineTo(tx + 8, -6);
+        ctx.fill();
+      }
+    } else if (obs.type === 'FENCE') {
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(4, -obs.height, 8, obs.height);
+      ctx.fillRect(obs.width - 12, -obs.height, 8, obs.height);
+      ctx.fillStyle = '#b45309';
+      ctx.fillRect(0, -obs.height + 10, obs.width, 10);
+      ctx.fillRect(0, -obs.height + 32, obs.width, 10);
+    } else if (obs.type === 'ROCK') {
+      ctx.fillStyle = '#334155';
       ctx.beginPath();
-      ctx.moveTo(tx, -6);
-      ctx.lineTo(tx + 4, -18);
-      ctx.lineTo(tx + 8, -6);
+      ctx.moveTo(0, 0);
+      ctx.lineTo(10, -obs.height);
+      ctx.lineTo(obs.width * 0.75, -obs.height * 0.85);
+      ctx.lineTo(obs.width, 0);
+      ctx.closePath();
       ctx.fill();
+    } else if (obs.type === 'EAGLE') {
+      const flap = Math.sin(obs.wingPhase) * 22;
+      ctx.translate(obs.width / 2, -obs.height / 2);
+      ctx.fillStyle = '#451a03';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 20, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(-18, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.moveTo(-24, -2); ctx.lineTo(-32, 3); ctx.lineTo(-23, 4);
+      ctx.fill();
+      ctx.strokeStyle = '#78350f';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(-4, 0); ctx.lineTo(12, flap);
+      ctx.stroke();
     }
-    ctx.fillStyle = '#dc2626';
-    ctx.beginPath();
-    ctx.arc(obs.width / 2, -6, 5, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (obs.type === 'FENCE') {
-    // Breakable Wooden Ranch Gate
-    ctx.fillStyle = '#78350f';
-    ctx.fillRect(4, -obs.height, 8, obs.height);
-    ctx.fillRect(obs.width - 12, -obs.height, 8, obs.height);
-    ctx.fillStyle = '#92400e';
-    ctx.fillRect(0, -obs.height + 8, obs.width, 10);
-    ctx.fillRect(0, -obs.height + 28, obs.width, 10);
-  } else if (obs.type === 'ROCK') {
-    ctx.fillStyle = '#334155';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(10, -obs.height);
-    ctx.lineTo(obs.width * 0.75, -obs.height * 0.85);
-    ctx.lineTo(obs.width, 0);
-    ctx.closePath();
-    ctx.fill();
-  } else if (obs.type === 'EAGLE') {
-    const flap = Math.sin(obs.wingPhase) * 22;
-    ctx.translate(obs.width / 2, -obs.height / 2);
-    ctx.fillStyle = '#451a03';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 20, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.arc(-18, 0, 7, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.moveTo(-24, -2);
-    ctx.lineTo(-32, 3);
-    ctx.lineTo(-23, 4);
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 6;
-    ctx.beginPath();
-    ctx.moveTo(-4, 0);
-    ctx.lineTo(12, flap);
-    ctx.stroke();
-  }
-  ctx.restore();
-}
+    ctx.restore();
+  });
 
-function drawSheep(s) {
-  if (!s.alive) return;
-  ctx.save();
-  ctx.translate(s.x, GROUND_Y + s.z);
-  const legSwing = Math.sin(s.legPhase) * 5;
-
-  // Legs
-  ctx.strokeStyle = '#1e293b';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(-12, -14); ctx.lineTo(-12 + legSwing, 0);
-  ctx.moveTo(12, -14); ctx.lineTo(12 - legSwing, 0);
-  ctx.stroke();
-
-  // Fluffy Wool Coat
-  ctx.fillStyle = '#f1f5f9';
-  ctx.beginPath();
-  ctx.arc(-10, -22, 12, 0, Math.PI * 2);
-  ctx.arc(4, -24, 14, 0, Math.PI * 2);
-  ctx.arc(16, -20, 11, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Black Sheep Head
-  ctx.fillStyle = '#1e293b';
-  ctx.beginPath();
-  ctx.ellipse(24, -24, 8, 6, 0.3, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawFarmer(f) {
-  ctx.save();
-  const renderY = GROUND_Y + f.z;
-  ctx.translate(f.x, renderY);
-
-  // Farmer Health Bar above head
-  ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.fillRect(-26, -98, 52, 7);
-  ctx.fillStyle = '#ef4444';
-  ctx.fillRect(-25, -97, 50 * Math.max(0, f.hp / f.maxHp), 5);
-
-  // Red Warning Exclamation & Ground Telegraph during Windup
-  if (f.state === 'WINDUP') {
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.28)';
-    ctx.beginPath();
-    ctx.ellipse(f.facing * 42, 0, 46, 14, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#ef4444';
-    ctx.font = '900 22px Segoe UI';
-    ctx.fillText('!', -4, -105);
-  }
-
-  ctx.scale(f.facing, 1);
-
-  const stride = Math.sin(f.walkCycle) * 10;
-  // Boots & Denim Overalls Legs
-  ctx.strokeStyle = '#1e3a8a';
-  ctx.lineWidth = 8;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-6, -34); ctx.lineTo(-8 - stride, -2);
-  ctx.moveTo(6, -34); ctx.lineTo(8 + stride, -2);
-  ctx.stroke();
-
-  // Plaid Flannel Torso & Overalls
-  ctx.fillStyle = f.type === 'WOODSMAN' ? '#7f1d1d' : '#b45309';
-  ctx.fillRect(-13, -64, 26, 32);
-  ctx.fillStyle = '#1d4ed8';
-  ctx.fillRect(-11, -48, 22, 18);
-
-  // Head & Straw Hat
-  ctx.fillStyle = '#fed7aa';
-  ctx.beginPath();
-  ctx.arc(0, -73, 10, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Farmer Straw Hat
-  ctx.fillStyle = '#eab308';
-  ctx.beginPath();
-  ctx.ellipse(0, -80, 18, 4, 0, 0, Math.PI * 2);
-  ctx.fillRect(-10, -87, 20, 7);
-  ctx.fill();
-
-  // Pitchfork or Heavy Club Weapon Animation
-  ctx.save();
-  ctx.translate(4, -52);
-  if (f.state === 'WINDUP') {
-    ctx.rotate(-0.65); // Pull back weapon
-  } else if (f.state === 'STRIKE') {
-    ctx.rotate(0.35);  // Thrust forward
-  }
-
-  // Wooden Shaft
-  ctx.strokeStyle = '#78350f';
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(-12, 6);
-  ctx.lineTo(42, 0);
-  ctx.stroke();
-
-  // Steel Pitchfork Prongs
-  ctx.strokeStyle = '#cbd5e1';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(42, -7); ctx.lineTo(58, -7);
-  ctx.moveTo(42, 0);  ctx.lineTo(60, 0);
-  ctx.moveTo(42, 7);  ctx.lineTo(58, 7);
-  ctx.moveTo(42, -7); ctx.lineTo(42, 7);
-  ctx.stroke();
-
-  ctx.restore();
-  ctx.restore();
-}
-
-function gameLoop(timestamp) {
-  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
-  lastTime = timestamp;
-
-  if (comboTimer > 0) {
-    comboTimer -= dt;
-    if (comboTimer <= 0) comboMultiplier = 1;
-  }
-
-  ctx.save();
-  if (screenShake > 0) {
-    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
-    screenShake = Math.max(0, screenShake - dt * 28);
-  }
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawBackground();
-
-  if (gameState === 'RUNNER') {
-    wolf.update(dt);
-    updateRunner(dt);
-  } else if (gameState === 'RAID_INTRO' || gameState === 'COMBAT') {
-    wolf.update(dt);
-    updateCombat(dt);
-  }
-
-  // Draw Runner Entities
-  obstacles.forEach(drawObstacle);
+  // Draw Steaks
   foods.forEach(f => {
     ctx.save();
     ctx.translate(f.x, f.y);
@@ -1436,14 +1616,81 @@ function gameLoop(timestamp) {
     ctx.restore();
   });
 
-  // Sort 2.5D entities by Z depth so foreground overlaps background naturally
-  const depthEntities = [
-    { z: wolf.z, draw: () => wolf.draw() },
-    ...sheepList.map(s => ({ z: s.z, draw: () => drawSheep(s) })),
-    ...farmers.map(f => ({ z: f.z, draw: () => drawFarmer(f) }))
-  ];
-  depthEntities.sort((a, b) => a.z - b.z);
-  depthEntities.forEach(e => e.draw());
+  wolf.drawSideView();
+}
+
+function updateHUD() {
+  const hpPct = Math.max(0, (wolf.hp / wolf.maxHp) * 100);
+  hpFill.style.width = `${hpPct}%`;
+  hpDamageFill.style.width = `${hpPct}%`;
+  hpText.textContent = `${Math.ceil(wolf.hp)} / ${wolf.maxHp}`;
+  staminaFill.style.width = `${(wolf.stamina / wolf.maxStamina) * 100}%`;
+  rageFill.style.width = `${wolf.rage}%`;
+  scoreDisplay.textContent = skillScore;
+
+  if (gameState === 'RUNNER') {
+    phaseDisplay.textContent = `NEXT PASTURE RAID: ${Math.max(0, Math.ceil(distanceToRaid))}m`;
+  } else if (gameState === 'POV_COMBAT') {
+    phaseDisplay.textContent = `FARMERS REMAINING: ${povEnemies.length}`;
+  }
+}
+
+function triggerGameOver() {
+  gameState = 'GAMEOVER';
+  combatControls.classList.add('hidden');
+  modeBanner.style.opacity = '0';
+  overlayTitle.textContent = 'THE ALPHA HAS FALLEN';
+  guideGrid.innerHTML = `
+    <div class="guide-col" style="grid-column: span 2; text-align: center;">
+      <h3>FINAL HUNT REPORT</h3>
+      <p style="font-size: 20px; color: #f8fafc; margin-top: 8px;">
+        Total Skill Score: <strong style="color: #fbbf24;">${skillScore}</strong> &bull;
+        Farmer Ambush Waves Cleared: <strong style="color: #38bdf8;">${raidWave - 1}</strong>
+      </p>
+    </div>
+  `;
+  startBtn.textContent = 'HUNT AGAIN';
+  overlay.classList.remove('hidden');
+}
+
+function resetGame() {
+  wolf.reset();
+  skillScore = 0;
+  raidWave = 1;
+  distanceToRaid = 450;
+  gameSpeed = 430;
+  obstacles = [];
+  foods = [];
+  particles = [];
+  popups = [];
+  spawnObsTimer = 1.0;
+  spawnFoodTimer = 1.8;
+  combatControls.classList.add('hidden');
+  runnerHint.classList.remove('hidden');
+  modeBanner.style.opacity = '0';
+  gameState = 'RUNNER';
+  updateHUD();
+}
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+  lastTime = timestamp;
+
+  ctx.save();
+  if (screenShake > 0) {
+    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+    screenShake = Math.max(0, screenShake - dt * 32);
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (gameState === 'RUNNER' || gameState === 'MENU' || gameState === 'GAMEOVER') {
+    if (gameState === 'RUNNER') updateRunnerPhase(dt);
+    drawRunnerScene();
+  } else if (gameState === 'POV_COMBAT') {
+    updatePovCombat(dt);
+    draw3DPovScene();
+  }
 
   // Particles
   for (let i = particles.length - 1; i >= 0; i--) {
@@ -1463,7 +1710,7 @@ function gameLoop(timestamp) {
   }
   ctx.globalAlpha = 1;
 
-  // Popups
+  // Floating Skill Score Popups
   for (let i = popups.length - 1; i >= 0; i--) {
     const pop = popups[i];
     pop.y += pop.vy * dt;
@@ -1476,57 +1723,118 @@ function gameLoop(timestamp) {
     ctx.font = `900 ${pop.size}px Segoe UI`;
     ctx.fillStyle = pop.color;
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3.5;
     ctx.strokeText(pop.text, pop.x, pop.y);
     ctx.fillText(pop.text, pop.x, pop.y);
   }
   ctx.globalAlpha = 1;
-  ctx.restore();
 
+  // Red Damage Vignette Flash
+  if (redFlash > 0) {
+    ctx.fillStyle = `rgba(220, 38, 38, ${redFlash})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    redFlash = Math.max(0, redFlash - dt * 1.5);
+  }
+
+  ctx.restore();
   updateHUD();
   requestAnimationFrame(gameLoop);
 }
 
-// Keyboard Controls
+// ==========================================
+// DIRECT SCREEN GESTURES (Runner) & COMBAT CONTROLS
+// ==========================================
+let pointerStartX = 0;
+let pointerStartY = 0;
+let gestureHandled = false;
+
+canvas.addEventListener('pointerdown', e => {
+  if (gameState === 'RUNNER') {
+    pointerStartX = e.clientX;
+    pointerStartY = e.clientY;
+    gestureHandled = false;
+
+    const rect = canvas.getBoundingClientRect();
+    const relY = (e.clientY - rect.top) / rect.height;
+
+    // Tapping the upper 75% of screen jumps immediately; holding bottom 25% crouches/dives
+    if (relY > 0.75) {
+      wolf.crouchStart();
+      gestureHandled = true;
+    } else {
+      wolf.jump();
+    }
+  } else if (gameState === 'POV_COMBAT') {
+    // Clicking directly on an enemy in 3D view bites them!
+    performPovAttack('BITE');
+  }
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (gameState !== 'RUNNER' || gestureHandled) return;
+  const dx = e.clientX - pointerStartX;
+  const dy = e.clientY - pointerStartY;
+
+  if (dy > 32) {
+    wolf.crouchStart();
+    gestureHandled = true;
+  } else if (dx > 38) {
+    wolf.runnerLunge();
+    gestureHandled = true;
+  }
+});
+
+window.addEventListener('pointerup', () => {
+  wolf.crouchEnd();
+  povWolf.bracing = false;
+});
+
+// Keyboard Controls (Works seamlessly in both Runner & 3D POV Combat)
 window.addEventListener('keydown', e => {
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
-  if (e.code === 'ArrowUp' || e.code === 'KeyW') {
-    keys.up = true;
-    if (gameState === 'RUNNER') wolf.jump();
+  if (gameState === 'RUNNER') {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      wolf.jump();
+    } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+      e.preventDefault();
+      wolf.crouchStart();
+    } else if (e.code === 'KeyF' || e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'ArrowRight' || e.code === 'KeyD') {
+      wolf.runnerLunge();
+    }
+  } else if (gameState === 'POV_COMBAT') {
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') povDodge(-1);
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') povDodge(1);
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') povWolf.bracing = true;
+    if (e.code === 'KeyJ' || e.code === 'KeyF') performPovAttack('BITE');
+    if (e.code === 'KeyK') performPovAttack('CLAW');
+    if (e.code === 'KeyL' || e.code === 'ArrowUp' || e.code === 'KeyW') performPovAttack('POUNCE');
+    if (e.code === 'Space') {
+      e.preventDefault();
+      performPovAttack('HOWL');
+    }
   }
-  if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
-  if (e.code === 'Space') {
-    e.preventDefault();
-    wolf.jump();
-  }
-  if (e.code === 'KeyF' || e.code === 'KeyJ') wolf.biteAttack();
-  if (e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyK') wolf.lungeDodge();
 });
 
 window.addEventListener('keyup', e => {
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
-  if (e.code === 'ArrowUp' || e.code === 'KeyW') keys.up = false;
-  if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
+  if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+    wolf.crouchEnd();
+    povWolf.bracing = false;
+  }
 });
 
-// Bind On-Screen Controller Buttons
-function bindHoldBtn(id, keyName) {
-  const btn = document.getElementById(id);
-  btn.addEventListener('pointerdown', e => { e.preventDefault(); keys[keyName] = true; btn.classList.add('active'); });
-  const release = () => { keys[keyName] = false; btn.classList.remove('active'); };
-  btn.addEventListener('pointerup', release);
-  btn.addEventListener('pointerleave', release);
-}
-bindHoldBtn('btnLeft', 'left');
-bindHoldBtn('btnRight', 'right');
-bindHoldBtn('btnUp', 'up');
-bindHoldBtn('btnDown', 'down');
+// Bind 3D Combat On-Screen Controller Buttons
+document.getElementById('btnDodgeLeft').addEventListener('pointerdown', e => { e.preventDefault(); povDodge(-1); });
+document.getElementById('btnDodgeRight').addEventListener('pointerdown', e => { e.preventDefault(); povDodge(1); });
 
-document.getElementById('btnBite').addEventListener('pointerdown', e => { e.preventDefault(); wolf.biteAttack(); });
-document.getElementById('btnDodge').addEventListener('pointerdown', e => { e.preventDefault(); wolf.lungeDodge(); });
-document.getElementById('btnJump').addEventListener('pointerdown', e => { e.preventDefault(); wolf.jump(); });
+const btnGuard = document.getElementById('btnGuard');
+btnGuard.addEventListener('pointerdown', e => { e.preventDefault(); povWolf.bracing = true; });
+btnGuard.addEventListener('pointerup', () => { povWolf.bracing = false; });
+btnGuard.addEventListener('pointerleave', () => { povWolf.bracing = false; });
+
+document.getElementById('btnBite').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('BITE'); });
+document.getElementById('btnClaw').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('CLAW'); });
+document.getElementById('btnPounce').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('POUNCE'); });
+document.getElementById('btnHowl').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('HOWL'); });
 
 startBtn.addEventListener('click', () => {
   overlay.classList.add('hidden');
