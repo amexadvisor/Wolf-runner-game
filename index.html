@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Endless Wolf Runner</title>
+  <title>Midnight Wolf Runner - Realistic Edition</title>
   <style>
     * {
       box-sizing: border-box;
@@ -12,7 +12,7 @@
       user-select: none;
     }
     body {
-      background-color: #0d131a;
+      background-color: #06090e;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -22,12 +22,12 @@
     }
     #gameContainer {
       position: relative;
-      width: 900px;
-      height: 450px;
-      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
-      border-radius: 12px;
+      width: 960px;
+      height: 480px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+      border-radius: 14px;
       overflow: hidden;
-      border: 2px solid #2a3b4c;
+      border: 2px solid #283747;
     }
     canvas {
       display: block;
@@ -36,69 +36,73 @@
     }
     #ui {
       position: absolute;
-      top: 16px;
-      left: 20px;
-      right: 20px;
+      top: 18px;
+      left: 24px;
+      right: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       pointer-events: none;
       color: #ffffff;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      text-shadow: 0 2px 6px rgba(0,0,0,0.9);
     }
     .lives-box {
       font-size: 26px;
-      letter-spacing: 4px;
+      letter-spacing: 5px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
     }
     .stats-box {
       text-align: right;
-      font-size: 18px;
-      font-weight: 700;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
     }
     .stats-box span {
-      color: #ffd166;
+      color: #ffca3a;
     }
     #overlay {
       position: absolute;
       inset: 0;
-      background: rgba(13, 19, 26, 0.75);
+      background: radial-gradient(circle, rgba(16, 24, 35, 0.78) 0%, rgba(6, 9, 14, 0.92) 100%);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       color: #fff;
       text-align: center;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(5px);
     }
     #overlay h1 {
-      font-size: 46px;
-      margin-bottom: 10px;
-      color: #e0fbfc;
+      font-size: 48px;
+      margin-bottom: 12px;
+      color: #f8f9fa;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 3px;
+      text-shadow: 0 4px 15px rgba(0, 0, 0, 0.8);
     }
     #overlay p {
-      font-size: 18px;
-      color: #98c1d9;
-      margin-bottom: 24px;
-      max-width: 500px;
-      line-height: 1.5;
+      font-size: 17px;
+      color: #adb5bd;
+      margin-bottom: 28px;
+      max-width: 540px;
+      line-height: 1.6;
     }
     button {
-      padding: 12px 32px;
+      padding: 14px 40px;
       font-size: 20px;
-      font-weight: bold;
-      color: #0d131a;
-      background: #ffd166;
+      font-weight: 800;
+      color: #0b0f19;
+      background: linear-gradient(135deg, #ffca3a 0%, #f77f00 100%);
       border: none;
-      border-radius: 30px;
+      border-radius: 35px;
       cursor: pointer;
-      transition: transform 0.15s ease, background 0.15s ease;
-      box-shadow: 0 4px 15px rgba(255, 209, 102, 0.4);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      box-shadow: 0 6px 20px rgba(247, 127, 0, 0.45);
+      letter-spacing: 1px;
     }
     button:hover {
-      background: #ffde8a;
-      transform: scale(1.05);
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 8px 25px rgba(247, 127, 0, 0.65);
     }
     .hidden {
       display: none !important;
@@ -108,24 +112,24 @@
 <body>
 
 <div id="gameContainer">
-  <canvas id="gameCanvas" width="900" height="450"></canvas>
+  <canvas id="gameCanvas" width="960" height="480"></canvas>
   
   <div id="ui">
     <div class="lives-box" id="livesDisplay">❤️❤️❤️</div>
     <div class="stats-box">
       <div>SCORE: <span id="scoreDisplay">0</span></div>
-      <div style="font-size: 14px; color: #98c1d9;">MEAT: <span id="foodDisplay">0</span></div>
+      <div style="font-size: 14px; color: #a8dadc; margin-top: 2px;">STEAKS: <span id="foodDisplay">0</span></div>
     </div>
   </div>
 
   <div id="overlay">
-    <h1 id="overlayTitle">Midnight Wolf Runner</h1>
+    <h1 id="overlayTitle">Wild Wolf Runner</h1>
     <p id="overlayDesc">
-      <strong>Space / Up Arrow / Click</strong> to Jump (Double Jump supported)<br>
-      <strong>Down Arrow / S</strong> to Fast-Fall<br>
-      Collect 🥩 (+50 pts) & 🍒 (+1 Life). Dodge Rocks and Eagles!
+      <strong>Space / Up Arrow / Click</strong> to Leap (Double Jump enabled)<br>
+      <strong>Down Arrow / S</strong> to Dive Faster<br>
+      Feast on <strong>Steaks</strong> (+50 pts) & <strong>Wild Berries</strong> (+1 Heart). Evade Boulders and Hunting Eagles!
     </p>
-    <button id="startBtn">RUN</button>
+    <button id="startBtn">HUNT</button>
   </div>
 </div>
 
@@ -140,25 +144,25 @@ const overlayTitle = document.getElementById('overlayTitle');
 const overlayDesc = document.getElementById('overlayDesc');
 const startBtn = document.getElementById('startBtn');
 
-const GROUND_Y = 380;
+const GROUND_Y = 405;
 let gameState = 'START';
 let lastTime = 0;
 let distanceScore = 0;
 let bonusScore = 0;
 let foodCount = 0;
-let gameSpeed = 380; // pixels per second
+let gameSpeed = 410;
 let spawnObstacleTimer = 0;
 let spawnFoodTimer = 0;
 
-// Wolf Player Object
+// Realistic Articulated Wolf
 const wolf = {
-  x: 110,
+  x: 120,
   y: GROUND_Y,
-  width: 68,
-  height: 44,
+  width: 84,
+  height: 52,
   vy: 0,
-  gravity: 1950,
-  jumpForce: -690,
+  gravity: 2050,
+  jumpForce: -730,
   jumpsLeft: 2,
   lives: 3,
   maxLives: 3,
@@ -178,13 +182,13 @@ const wolf = {
     if (this.jumpsLeft > 0) {
       this.vy = this.jumpForce;
       this.jumpsLeft--;
-      createParticles(this.x + 20, this.y, '#98c1d9', 8);
+      createParticles(this.x + 25, this.y, '#8d99ae', 12);
     }
   },
 
   fastFall() {
     if (this.y < GROUND_Y) {
-      this.vy += 900;
+      this.vy += 980;
     }
   },
 
@@ -196,9 +200,12 @@ const wolf = {
       this.y = GROUND_Y;
       this.vy = 0;
       this.jumpsLeft = 2;
-      this.runCycle += dt * (gameSpeed * 0.035);
+      this.runCycle += dt * (gameSpeed * 0.032);
+      if (Math.random() < 0.35) {
+        createParticles(this.x + 12, GROUND_Y, 'rgba(140, 125, 112, 0.5)', 1);
+      }
     } else {
-      this.runCycle += dt * 4;
+      this.runCycle += dt * 3.5;
     }
 
     if (this.invincibleTimer > 0) {
@@ -206,96 +213,183 @@ const wolf = {
     }
   },
 
+  drawLimb(hipX, hipY, phaseOffset, isFront, colorUpper, colorLower) {
+    const isAirborne = this.y < GROUND_Y;
+    const angle = isAirborne ? (isFront ? -0.55 : 0.55) : Math.sin(this.runCycle + phaseOffset) * 0.65;
+    const kneeBend = isAirborne ? 0.35 : (Math.cos(this.runCycle + phaseOffset) * 0.4 + 0.45);
+
+    const thighLen = 15;
+    const shinLen = 15;
+
+    const kneeX = hipX + Math.sin(angle) * thighLen;
+    const kneeY = hipY + Math.cos(angle) * thighLen;
+
+    const footAngle = isFront ? angle + kneeBend * 0.7 : angle - kneeBend * 0.7;
+    const footX = kneeX + Math.sin(footAngle) * shinLen;
+    const footY = kneeY + Math.cos(footAngle) * shinLen;
+
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Upper Leg
+    ctx.strokeStyle = colorUpper;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(hipX, hipY);
+    ctx.lineTo(kneeX, kneeY);
+    ctx.stroke();
+
+    // Lower Leg
+    ctx.strokeStyle = colorLower;
+    ctx.lineWidth = 5.5;
+    ctx.beginPath();
+    ctx.moveTo(kneeX, kneeY);
+    ctx.lineTo(footX, footY);
+    ctx.stroke();
+
+    // Paw
+    ctx.fillStyle = colorLower;
+    ctx.beginPath();
+    ctx.ellipse(footX + 3, footY, 4.5, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  },
+
   draw() {
-    if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 12) % 2 === 0) {
-      return; // Blink effect during invincibility
+    if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 14) % 2 === 0) {
+      return;
     }
 
     ctx.save();
     ctx.translate(this.x, this.y);
 
     const isAirborne = this.y < GROUND_Y;
-    const legSwing = isAirborne ? 0.6 : Math.sin(this.runCycle);
-    const bounce = isAirborne ? 0 : Math.abs(Math.cos(this.runCycle)) * 4;
+    const spineFlex = isAirborne ? (this.vy * 0.00025) : Math.sin(this.runCycle) * 0.06;
+    const bounce = isAirborne ? 0 : Math.abs(Math.cos(this.runCycle)) * 4.5;
+
+    // Ground Shadow
+    const shadowScale = Math.max(0.3, 1 - (GROUND_Y - this.y) / 260);
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.45 * shadowScale})`;
+    ctx.beginPath();
+    ctx.ellipse(42, 2, 42 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.translate(0, -bounce);
+    ctx.rotate(spineFlex);
 
-    // Shadow on ground
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    // Far-side Legs
+    this.drawLimb(16, -25, Math.PI, false, '#2b3138', '#1c2026');
+    this.drawLimb(56, -25, 0, true, '#2b3138', '#1c2026');
+
+    // Bushy Wolf Tail
+    const tailWag = Math.sin(this.runCycle) * 6;
+    ctx.fillStyle = '#3d4550';
     ctx.beginPath();
-    ctx.ellipse(34, bounce, Math.max(15, 34 - (GROUND_Y - this.y) * 0.1), 6, 0, 0, Math.PI * 2);
+    ctx.moveTo(12, -30);
+    ctx.quadraticCurveTo(-12, -36 + tailWag, -24, -18 + tailWag);
+    ctx.quadraticCurveTo(-8, -14 + tailWag, 14, -22);
+    ctx.closePath();
+    ctx.fill();
+    // White Tail Tip
+    ctx.fillStyle = '#cdd6e0';
+    ctx.beginPath();
+    ctx.arc(-20, -19 + tailWag, 4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Back Legs
-    ctx.strokeStyle = '#4a5568';
-    ctx.lineWidth = 7;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(16, -18);
-    ctx.lineTo(16 - legSwing * 14, -3);
-    ctx.moveTo(50, -18);
-    ctx.lineTo(50 + legSwing * 14, -3);
-    ctx.stroke();
+    // Main Torso & Ribcage (Multi-tone Fur Gradient)
+    const bodyGrad = ctx.createLinearGradient(0, -45, 0, -14);
+    bodyGrad.addColorStop(0, '#2b303a');     // Dark dorsal ridge
+    bodyGrad.addColorStop(0.55, '#5c6470');  // Grey flank
+    bodyGrad.addColorStop(1, '#d8dee9');     // Pale underbelly
 
-    // Tail
-    ctx.strokeStyle = '#718096';
-    ctx.lineWidth = 9;
+    ctx.fillStyle = bodyGrad;
     ctx.beginPath();
-    ctx.moveTo(10, -24);
-    ctx.quadraticCurveTo(-8, -28 + legSwing * 5, -14, -18);
-    ctx.stroke();
-
-    // Torso
-    ctx.fillStyle = '#718096';
-    ctx.beginPath();
-    ctx.roundRect(8, -34, 48, 20, 9);
-    ctx.fill();
-
-    // Underbelly
-    ctx.fillStyle = '#cbd5e0';
-    ctx.beginPath();
-    ctx.roundRect(14, -22, 36, 7, 4);
-    ctx.fill();
-
-    // Front Legs
-    ctx.strokeStyle = '#a0aec0';
-    ctx.lineWidth = 7;
-    ctx.beginPath();
-    ctx.moveTo(18, -16);
-    ctx.lineTo(18 + legSwing * 15, -3);
-    ctx.moveTo(50, -16);
-    ctx.lineTo(50 - legSwing * 15, -3);
-    ctx.stroke();
-
-    // Neck & Head
-    ctx.fillStyle = '#718096';
-    ctx.beginPath();
-    ctx.moveTo(46, -30);
-    ctx.lineTo(58, -46);
-    ctx.lineTo(74, -38);
-    ctx.lineTo(74, -31);
-    ctx.lineTo(54, -24);
+    ctx.moveTo(10, -28); // Rump
+    ctx.quadraticCurveTo(32, -38, 52, -41); // Back & Muscular Shoulders
+    ctx.lineTo(68, -32); // Lower Neck
+    ctx.quadraticCurveTo(64, -15, 48, -17); // Deep Chest
+    ctx.quadraticCurveTo(28, -21, 14, -19); // Tucked Waist
     ctx.closePath();
     ctx.fill();
 
-    // Ears
-    ctx.fillStyle = '#4a5568';
+    // Shoulder Fur Ruff (Jagged Collar)
+    ctx.fillStyle = '#434a54';
     ctx.beginPath();
-    ctx.moveTo(53, -43);
-    ctx.lineTo(56, -55);
+    ctx.moveTo(46, -40);
+    ctx.lineTo(54, -46);
+    ctx.lineTo(56, -39);
     ctx.lineTo(63, -44);
+    ctx.lineTo(64, -34);
+    ctx.lineTo(48, -24);
+    ctx.closePath();
     ctx.fill();
 
-    // Eye
-    ctx.fillStyle = '#ffd166';
+    // Near-side Legs
+    this.drawLimb(18, -24, 0.3, false, '#4f5866', '#8d99ae');
+    this.drawLimb(58, -24, Math.PI + 0.3, true, '#4f5866', '#8d99ae');
+
+    // Back Ear
+    ctx.fillStyle = '#2b303a';
     ctx.beginPath();
-    ctx.arc(63, -39, 2.5, 0, Math.PI * 2);
+    ctx.moveTo(62, -45);
+    ctx.lineTo(60, -58);
+    ctx.lineTo(69, -46);
+    ctx.closePath();
     ctx.fill();
 
-    // Nose
-    ctx.fillStyle = '#1a202c';
+    // Wolf Head & Snout
+    ctx.fillStyle = '#4f5866';
     ctx.beginPath();
-    ctx.arc(73, -36, 2.5, 0, Math.PI * 2);
+    ctx.moveTo(54, -36);
+    ctx.lineTo(62, -50); // Forehead
+    ctx.lineTo(74, -47); // Bridge of nose
+    ctx.lineTo(88, -42); // Snout tip
+    ctx.lineTo(85, -36); // Upper lip
+    ctx.lineTo(72, -35); // Jaw hinge
+    ctx.lineTo(62, -28); // Throat
+    ctx.closePath();
+    ctx.fill();
+
+    // White Cheek & Lower Jaw Markings
+    ctx.fillStyle = '#d8dee9';
+    ctx.beginPath();
+    ctx.moveTo(62, -28);
+    ctx.lineTo(74, -37);
+    ctx.lineTo(85, -36);
+    ctx.lineTo(82, -32);
+    ctx.lineTo(68, -31);
+    ctx.closePath();
+    ctx.fill();
+
+    // Front Ear with Pink/Light Inner Fur
+    ctx.fillStyle = '#3d4550';
+    ctx.beginPath();
+    ctx.moveTo(57, -44);
+    ctx.lineTo(54, -59);
+    ctx.lineTo(65, -46);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#a39092';
+    ctx.beginPath();
+    ctx.moveTo(58, -45);
+    ctx.lineTo(56, -55);
+    ctx.lineTo(63, -46);
+    ctx.closePath();
+    ctx.fill();
+
+    // Black Nose
+    ctx.fillStyle = '#111317';
+    ctx.beginPath();
+    ctx.arc(87, -41, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Glowing Amber Wolf Eye
+    ctx.fillStyle = '#ffbe0b';
+    ctx.beginPath();
+    ctx.moveTo(69, -44);
+    ctx.lineTo(75, -43);
+    ctx.lineTo(71, -40);
+    ctx.closePath();
     ctx.fill();
 
     ctx.restore();
@@ -303,24 +397,37 @@ const wolf = {
 
   getHitbox() {
     return {
-      x: this.x + 10,
-      y: this.y - 40,
-      width: 54,
-      height: 38
+      x: this.x + 12,
+      y: this.y - 44,
+      width: 64,
+      height: 40
     };
   }
 };
 
-// Parallax Background Layers
-const stars = Array.from({ length: 45 }, () => ({
+// Environment Parallax Data
+const stars = Array.from({ length: 55 }, () => ({
   x: Math.random() * canvas.width,
-  y: Math.random() * 220,
-  r: Math.random() * 1.8 + 0.5
+  y: Math.random() * 250,
+  r: Math.random() * 1.6 + 0.4,
+  alpha: Math.random() * 0.6 + 0.4
 }));
 
-const bgTrees = Array.from({ length: 18 }, (_, i) => ({
-  x: i * 65,
-  h: 70 + Math.random() * 55
+const mountains = Array.from({ length: 8 }, (_, i) => ({
+  x: i * 160,
+  w: 220 + Math.random() * 80,
+  h: 130 + Math.random() * 70
+}));
+
+const bgTrees = Array.from({ length: 22 }, (_, i) => ({
+  x: i * 55,
+  h: 75 + Math.random() * 65,
+  w: 36 + Math.random() * 16
+}));
+
+const grassTufts = Array.from({ length: 30 }, (_, i) => ({
+  x: i * 35,
+  h: 6 + Math.random() * 7
 }));
 
 let obstacles = [];
@@ -333,8 +440,8 @@ function createParticles(x, y, color, count = 12) {
       x,
       y,
       vx: (Math.random() - 0.5) * 260,
-      vy: (Math.random() - 0.7) * 260,
-      size: Math.random() * 5 + 2,
+      vy: (Math.random() - 0.75) * 260,
+      size: Math.random() * 4.5 + 1.5,
       color,
       life: 1
     });
@@ -342,37 +449,37 @@ function createParticles(x, y, color, count = 12) {
 }
 
 function spawnObstacle() {
-  const isBird = Math.random() > 0.62 && distanceScore > 120;
-  if (isBird) {
+  const isEagle = Math.random() > 0.56 && distanceScore > 80;
+  if (isEagle) {
     obstacles.push({
       type: 'EAGLE',
-      x: canvas.width + 40,
-      y: GROUND_Y - (Math.random() > 0.5 ? 65 : 115),
-      width: 44,
-      height: 26,
+      x: canvas.width + 60,
+      y: GROUND_Y - (Math.random() > 0.5 ? 68 : 122),
+      width: 64,
+      height: 36,
       wingPhase: Math.random() * Math.PI * 2
     });
   } else {
-    const isTall = Math.random() > 0.5;
+    const isTall = Math.random() > 0.45;
     obstacles.push({
       type: 'ROCK',
-      x: canvas.width + 40,
+      x: canvas.width + 60,
       y: GROUND_Y,
-      width: isTall ? 38 : 48,
-      height: isTall ? 46 : 32
+      width: isTall ? 48 : 62,
+      height: isTall ? 54 : 38
     });
   }
 }
 
 function spawnFood() {
-  const isLifeBerry = wolf.lives < wolf.maxLives && Math.random() < 0.25;
-  const heightOffset = Math.random() > 0.45 ? 95 : 22;
+  const isLifeBerry = wolf.lives < wolf.maxLives && Math.random() < 0.28;
+  const heightOffset = Math.random() > 0.45 ? 105 : 26;
   foods.push({
     type: isLifeBerry ? 'BERRY' : 'MEAT',
-    x: canvas.width + 40,
+    x: canvas.width + 50,
     y: GROUND_Y - heightOffset,
     baseY: GROUND_Y - heightOffset,
-    radius: 14,
+    radius: 16,
     phase: Math.random() * Math.PI * 2
   });
 }
@@ -400,24 +507,40 @@ function resetGame() {
   distanceScore = 0;
   bonusScore = 0;
   foodCount = 0;
-  gameSpeed = 380;
-  spawnObstacleTimer = 1.2;
-  spawnFoodTimer = 1.8;
+  gameSpeed = 410;
+  spawnObstacleTimer = 1.1;
+  spawnFoodTimer = 1.6;
   updateUI();
 }
 
 function update(dt) {
-  gameSpeed += dt * 7; // Smooth gradual acceleration
+  gameSpeed += dt * 7.5;
   distanceScore += (gameSpeed * dt) * 0.05;
 
   wolf.update(dt);
 
-  // Parallax Trees
+  // Parallax Mountains
+  mountains.forEach(m => {
+    m.x -= gameSpeed * 0.12 * dt;
+    if (m.x + m.w < -40) {
+      m.x = canvas.width + 60;
+    }
+  });
+
+  // Parallax Pine Trees
   bgTrees.forEach(tree => {
-    tree.x -= gameSpeed * 0.35 * dt;
+    tree.x -= gameSpeed * 0.38 * dt;
     if (tree.x < -60) {
       tree.x = canvas.width + 40;
-      tree.h = 70 + Math.random() * 55;
+      tree.h = 75 + Math.random() * 65;
+    }
+  });
+
+  // Foreground Grass
+  grassTufts.forEach(g => {
+    g.x -= gameSpeed * dt;
+    if (g.x < -20) {
+      g.x = canvas.width + 15;
     }
   });
 
@@ -425,40 +548,40 @@ function update(dt) {
   spawnObstacleTimer -= dt;
   if (spawnObstacleTimer <= 0) {
     spawnObstacle();
-    spawnObstacleTimer = Math.max(0.65, (1.5 - gameSpeed * 0.0008) + Math.random() * 0.7);
+    spawnObstacleTimer = Math.max(0.62, (1.45 - gameSpeed * 0.00075) + Math.random() * 0.65);
   }
 
   const wolfBox = wolf.getHitbox();
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
-    const speedMultiplier = obs.type === 'EAGLE' ? 1.25 : 1;
+    const speedMultiplier = obs.type === 'EAGLE' ? 1.28 : 1;
     obs.x -= gameSpeed * speedMultiplier * dt;
-    if (obs.type === 'EAGLE') obs.wingPhase += dt * 12;
+    if (obs.type === 'EAGLE') obs.wingPhase += dt * 11;
 
     const obsBox = {
-      x: obs.x + 4,
-      y: obs.y - obs.height + 4,
-      width: obs.width - 8,
-      height: obs.height - 8
+      x: obs.x + 8,
+      y: obs.y - obs.height + 6,
+      width: obs.width - 16,
+      height: obs.height - 12
     };
 
     if (wolf.invincibleTimer <= 0 && checkOverlap(wolfBox, obsBox)) {
       wolf.lives--;
       wolf.invincibleTimer = 1.6;
-      createParticles(wolf.x + 30, wolf.y - 20, '#ef476f', 20);
+      createParticles(wolf.x + 35, wolf.y - 22, '#e63946', 24);
       updateUI();
 
       if (wolf.lives <= 0) {
         gameState = 'GAMEOVER';
-        overlayTitle.textContent = 'Game Over';
-        overlayDesc.innerHTML = `Total Score: <strong>${Math.floor(distanceScore + bonusScore)}</strong> | Meat Collected: <strong>${foodCount}</strong>`;
-        startBtn.textContent = 'PLAY AGAIN';
+        overlayTitle.textContent = 'The Hunt Ended';
+        overlayDesc.innerHTML = `Total Score: <strong>${Math.floor(distanceScore + bonusScore)}</strong> &bull; Steaks Devoured: <strong>${foodCount}</strong>`;
+        startBtn.textContent = 'RUN AGAIN';
         overlay.classList.remove('hidden');
       }
     }
 
-    if (obs.x + obs.width < -50) {
+    if (obs.x + obs.width < -70) {
       obstacles.splice(i, 1);
     }
   }
@@ -467,13 +590,13 @@ function update(dt) {
   spawnFoodTimer -= dt;
   if (spawnFoodTimer <= 0) {
     spawnFood();
-    spawnFoodTimer = 1.6 + Math.random() * 1.6;
+    spawnFoodTimer = 1.5 + Math.random() * 1.5;
   }
 
   for (let i = foods.length - 1; i >= 0; i--) {
     const f = foods[i];
     f.x -= gameSpeed * dt;
-    f.phase += dt * 5;
+    f.phase += dt * 4.5;
     f.y = f.baseY + Math.sin(f.phase) * 7;
 
     const foodBox = {
@@ -486,18 +609,18 @@ function update(dt) {
     if (checkOverlap(wolfBox, foodBox)) {
       if (f.type === 'BERRY') {
         wolf.lives = Math.min(wolf.maxLives, wolf.lives + 1);
-        createParticles(f.x, f.y, '#06d6a0', 16);
+        createParticles(f.x, f.y, '#ff4d6d', 18);
       } else {
         bonusScore += 50;
         foodCount++;
-        createParticles(f.x, f.y, '#ffd166', 14);
+        createParticles(f.x, f.y, '#ffca3a', 16);
       }
       foods.splice(i, 1);
       updateUI();
       continue;
     }
 
-    if (f.x < -40) {
+    if (f.x < -50) {
       foods.splice(i, 1);
     }
   }
@@ -507,111 +630,360 @@ function update(dt) {
     const p = particles[i];
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.life -= dt * 2.2;
+    p.life -= dt * 2.1;
     if (p.life <= 0) particles.splice(i, 1);
   }
 
   updateUI();
 }
 
+function drawPineTree(x, groundY, width, height) {
+  ctx.fillStyle = '#0d1826';
+  const tiers = 3;
+  for (let t = 0; t < tiers; t++) {
+    const tierTop = groundY - height + (t * height * 0.22);
+    const tierBottom = groundY - (tiers - 1 - t) * (height * 0.22);
+    const tierWidth = width * (0.55 + t * 0.25);
+    ctx.beginPath();
+    ctx.moveTo(x, tierTop);
+    ctx.lineTo(x - tierWidth / 2, tierBottom);
+    ctx.lineTo(x + tierWidth / 2, tierBottom);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
 function drawBackground() {
-  // Night Sky Gradient
+  // Deep Midnight Sky Gradient
   const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-  skyGrad.addColorStop(0, '#0b132b');
-  skyGrad.addColorStop(1, '#1c2541');
+  skyGrad.addColorStop(0, '#050811');
+  skyGrad.addColorStop(0.55, '#0f1c30');
+  skyGrad.addColorStop(1, '#1d3557');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, canvas.width, GROUND_Y);
 
   // Stars
-  ctx.fillStyle = '#ffffff';
   stars.forEach(s => {
+    ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  // Glowing Moon
-  ctx.fillStyle = '#fefae0';
+  // Realistic Moon with Outer Halo & Craters
+  const moonX = 780, moonY = 90;
+  const halo = ctx.createRadialGradient(moonX, moonY, 32, moonX, moonY, 115);
+  halo.addColorStop(0, 'rgba(254, 250, 224, 0.35)');
+  halo.addColorStop(1, 'rgba(254, 250, 224, 0)');
+  ctx.fillStyle = halo;
   ctx.beginPath();
-  ctx.arc(760, 85, 38, 0, Math.PI * 2);
+  ctx.arc(moonX, moonY, 115, 0, Math.PI * 2);
   ctx.fill();
 
-  // Parallax Pine Trees
-  ctx.fillStyle = '#141e30';
-  bgTrees.forEach(t => {
+  ctx.fillStyle = '#fefae0';
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, 38, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Moon Craters
+  ctx.fillStyle = 'rgba(212, 198, 158, 0.45)';
+  ctx.beginPath();
+  ctx.arc(moonX - 12, moonY - 8, 9, 0, Math.PI * 2);
+  ctx.arc(moonX + 14, moonY + 10, 12, 0, Math.PI * 2);
+  ctx.arc(moonX + 6, moonY - 16, 6, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Distant Snow-Capped Mountains
+  mountains.forEach(m => {
+    ctx.fillStyle = '#111f33';
     ctx.beginPath();
-    ctx.moveTo(t.x, GROUND_Y);
-    ctx.lineTo(t.x + 25, GROUND_Y - t.h);
-    ctx.lineTo(t.x + 50, GROUND_Y);
+    ctx.moveTo(m.x, GROUND_Y);
+    ctx.lineTo(m.x + m.w * 0.5, GROUND_Y - m.h);
+    ctx.lineTo(m.x + m.w, GROUND_Y);
+    ctx.closePath();
+    ctx.fill();
+
+    // Snow Cap Highlight
+    ctx.fillStyle = 'rgba(224, 251, 252, 0.14)';
+    ctx.beginPath();
+    ctx.moveTo(m.x + m.w * 0.5, GROUND_Y - m.h);
+    ctx.lineTo(m.x + m.w * 0.36, GROUND_Y - m.h * 0.72);
+    ctx.lineTo(m.x + m.w * 0.5, GROUND_Y - m.h * 0.78);
+    ctx.lineTo(m.x + m.w * 0.64, GROUND_Y - m.h * 0.72);
+    ctx.closePath();
     ctx.fill();
   });
 
-  // Ground
-  ctx.fillStyle = '#2b3a4a';
+  // Multi-Tiered Pine Forest
+  bgTrees.forEach(t => {
+    drawPineTree(t.x, GROUND_Y, t.w, t.h);
+  });
+
+  // Low Ground Mist
+  const mist = ctx.createLinearGradient(0, GROUND_Y - 45, 0, GROUND_Y);
+  mist.addColorStop(0, 'rgba(29, 53, 87, 0)');
+  mist.addColorStop(1, 'rgba(168, 218, 220, 0.12)');
+  ctx.fillStyle = mist;
+  ctx.fillRect(0, GROUND_Y - 45, canvas.width, 45);
+
+  // Forest Floor Soil & Turf
+  const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, canvas.height);
+  groundGrad.addColorStop(0, '#1b2d2a');
+  groundGrad.addColorStop(0.18, '#16202a');
+  groundGrad.addColorStop(1, '#080c11');
+  ctx.fillStyle = groundGrad;
   ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-  ctx.fillStyle = '#3d5a80';
-  ctx.fillRect(0, GROUND_Y, canvas.width, 6);
+
+  // Top Grass Ridge & Blades
+  ctx.fillStyle = '#2d4a43';
+  ctx.fillRect(0, GROUND_Y, canvas.width, 5);
+  ctx.strokeStyle = '#3a5a40';
+  ctx.lineWidth = 2;
+  grassTufts.forEach(g => {
+    ctx.beginPath();
+    ctx.moveTo(g.x, GROUND_Y + 2);
+    ctx.lineTo(g.x - 3, GROUND_Y - g.h);
+    ctx.moveTo(g.x + 4, GROUND_Y + 2);
+    ctx.lineTo(g.x + 7, GROUND_Y - g.h * 0.8);
+    ctx.stroke();
+  });
+}
+
+function drawRock(obs) {
+  ctx.save();
+  ctx.translate(obs.x, obs.y);
+
+  // Main Faceted Boulder
+  ctx.fillStyle = '#3d405b';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(6, -obs.height * 0.65);
+  ctx.lineTo(obs.width * 0.32, -obs.height);
+  ctx.lineTo(obs.width * 0.72, -obs.height * 0.88);
+  ctx.lineTo(obs.width * 0.92, -obs.height * 0.45);
+  ctx.lineTo(obs.width, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Moonlit Left Highlight Facet
+  ctx.fillStyle = '#5c6285';
+  ctx.beginPath();
+  ctx.moveTo(6, -obs.height * 0.65);
+  ctx.lineTo(obs.width * 0.32, -obs.height);
+  ctx.lineTo(obs.width * 0.48, -obs.height * 0.5);
+  ctx.lineTo(obs.width * 0.2, 0);
+  ctx.lineTo(0, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Deep Shadow Right Facet
+  ctx.fillStyle = '#26283a';
+  ctx.beginPath();
+  ctx.moveTo(obs.width * 0.48, -obs.height * 0.5);
+  ctx.lineTo(obs.width * 0.72, -obs.height * 0.88);
+  ctx.lineTo(obs.width * 0.92, -obs.height * 0.45);
+  ctx.lineTo(obs.width, 0);
+  ctx.lineTo(obs.width * 0.2, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Forest Moss Cap
+  ctx.fillStyle = '#3a5a40';
+  ctx.beginPath();
+  ctx.moveTo(obs.width * 0.18, -obs.height * 0.8);
+  ctx.quadraticCurveTo(obs.width * 0.32, -obs.height - 3, obs.width * 0.65, -obs.height * 0.88);
+  ctx.quadraticCurveTo(obs.width * 0.45, -obs.height * 0.68, obs.width * 0.18, -obs.height * 0.8);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawEagle(obs) {
+  ctx.save();
+  // Eagle flies leftwards toward the wolf
+  const centerX = obs.x + obs.width / 2;
+  const centerY = obs.y - obs.height / 2;
+  const flap = Math.sin(obs.wingPhase);
+  const bodyBob = flap * 4;
+
+  ctx.translate(centerX, centerY + bodyBob);
+
+  // Far Wing (Darker brown behind body)
+  ctx.fillStyle = '#362013';
+  ctx.beginPath();
+  ctx.moveTo(-4, -3);
+  ctx.quadraticCurveTo(8, -26 * flap - 8, 24, -22 * flap - 12);
+  ctx.lineTo(14, -2);
+  ctx.closePath();
+  ctx.fill();
+
+  // White Fanned Tail Feathers
+  ctx.fillStyle = '#f8f9fa';
+  ctx.beginPath();
+  ctx.moveTo(16, -3);
+  ctx.lineTo(34, -9);
+  ctx.lineTo(36, 0);
+  ctx.lineTo(33, 7);
+  ctx.lineTo(16, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  // Dark Brown Torso Plumage
+  ctx.fillStyle = '#4a2c18';
+  ctx.beginPath();
+  ctx.ellipse(2, 1, 20, 9, -0.08, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Sharp Yellow Talons (Tucked underneath)
+  ctx.strokeStyle = '#ffbe0b';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(-2, 9);
+  ctx.lineTo(-8, 15);
+  ctx.lineTo(-11, 13);
+  ctx.moveTo(4, 9);
+  ctx.lineTo(-2, 15);
+  ctx.lineTo(-5, 13);
+  ctx.stroke();
+
+  // White Bald Eagle Head & Feathered Neck Ruff
+  ctx.fillStyle = '#f8f9fa';
+  ctx.beginPath();
+  ctx.moveTo(-10, -7);
+  ctx.quadraticCurveTo(-24, -8, -26, 1);
+  ctx.quadraticCurveTo(-24, 9, -10, 7);
+  ctx.lineTo(-7, 3);
+  ctx.lineTo(-11, 0);
+  ctx.lineTo(-7, -3);
+  ctx.closePath();
+  ctx.fill();
+
+  // Curved Hooked Raptor Beak
+  ctx.fillStyle = '#ffb703';
+  ctx.beginPath();
+  ctx.moveTo(-24, -4);
+  ctx.quadraticCurveTo(-36, -3, -34, 5); // Sharp downward hook
+  ctx.lineTo(-29, 2);
+  ctx.lineTo(-23, 3);
+  ctx.closePath();
+  ctx.fill();
+
+  // Fierce Brow & Eye
+  ctx.fillStyle = '#111';
+  ctx.beginPath();
+  ctx.arc(-21, -1, 1.8, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#d6ccc2';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(-25, -3);
+  ctx.lineTo(-18, -2);
+  ctx.stroke();
+
+  // Near Wing with Articulated Primary Feathers
+  const wingTipY = 28 * flap;
+  ctx.fillStyle = '#5c3820';
+  ctx.beginPath();
+  ctx.moveTo(-8, 0);
+  ctx.quadraticCurveTo(4, wingTipY * 0.7, 22, wingTipY); // Leading edge
+  ctx.lineTo(28, wingTipY * 0.82); // Feather 1
+  ctx.lineTo(20, wingTipY * 0.65);
+  ctx.lineTo(25, wingTipY * 0.52); // Feather 2
+  ctx.lineTo(16, wingTipY * 0.38);
+  ctx.lineTo(21, wingTipY * 0.25); // Feather 3
+  ctx.lineTo(8, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawFood(f) {
+  ctx.save();
+  ctx.translate(f.x, f.y);
+
+  // Subtle Ambient Aura
+  const glow = ctx.createRadialGradient(0, 0, 3, 0, 0, 22);
+  if (f.type === 'MEAT') {
+    glow.addColorStop(0, 'rgba(255, 202, 58, 0.45)');
+    glow.addColorStop(1, 'rgba(255, 202, 58, 0)');
+  } else {
+    glow.addColorStop(0, 'rgba(255, 77, 109, 0.55)');
+    glow.addColorStop(1, 'rgba(255, 77, 109, 0)');
+  }
+  ctx.fillStyle = glow;
+  ctx.beginPath();
+  ctx.arc(0, 0, 22, 0, Math.PI * 2);
+  ctx.fill();
+
+  if (f.type === 'MEAT') {
+    ctx.rotate(-0.25);
+    // Ivory Bone Handle & Knobs
+    ctx.fillStyle = '#f5ebe0';
+    ctx.fillRect(-18, -3, 14, 6);
+    ctx.beginPath();
+    ctx.arc(-18, -3.5, 4, 0, Math.PI * 2);
+    ctx.arc(-18, 3.5, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Thick Outer Fat Rim
+    ctx.fillStyle = '#fae1dd';
+    ctx.beginPath();
+    ctx.ellipse(3, 0, 14, 11, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Rich Crimson Steak Cut
+    ctx.fillStyle = '#9e2a2b';
+    ctx.beginPath();
+    ctx.ellipse(2, 0, 11.5, 8.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner Marbling & Bone Ring
+    ctx.strokeStyle = '#f5ebe0';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(-2, -1, 3, 0, Math.PI * 2);
+    ctx.moveTo(3, -5);
+    ctx.quadraticCurveTo(6, 0, 9, -2);
+    ctx.moveTo(2, 4);
+    ctx.quadraticCurveTo(7, 2, 10, 5);
+    ctx.stroke();
+  } else {
+    // Wild Forest Berry Cluster + Leaf
+    ctx.fillStyle = '#2d6a4f';
+    ctx.beginPath();
+    ctx.ellipse(-5, -10, 7, 3.5, -0.5, 0, Math.PI * 2);
+    ctx.ellipse(5, -10, 7, 3.5, 0.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    const berryCoords = [[-5, 2], [5, 2], [0, -4], [0, 6]];
+    berryCoords.forEach(([bx, by]) => {
+      ctx.fillStyle = '#d90429';
+      ctx.beginPath();
+      ctx.arc(bx, by, 5.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Specular Berry Shine
+      ctx.fillStyle = '#ffccd5';
+      ctx.beginPath();
+      ctx.arc(bx - 1.8, by - 1.8, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  ctx.restore();
 }
 
 function drawEntities() {
-  // Obstacles
   obstacles.forEach(obs => {
-    if (obs.type === 'ROCK') {
-      ctx.fillStyle = '#4a4e69';
-      ctx.beginPath();
-      ctx.moveTo(obs.x, obs.y);
-      ctx.lineTo(obs.x + obs.width * 0.25, obs.y - obs.height);
-      ctx.lineTo(obs.x + obs.width * 0.75, obs.y - obs.height * 0.85);
-      ctx.lineTo(obs.x + obs.width, obs.y);
-      ctx.closePath();
-      ctx.fill();
-    } else {
-      // Eagle
-      ctx.save();
-      ctx.translate(obs.x + obs.width / 2, obs.y - obs.height / 2);
-      ctx.fillStyle = '#e07a5f';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 18, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Flapping Wing
-      ctx.strokeStyle = '#f4a261';
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.moveTo(-4, 0);
-      ctx.lineTo(4, Math.sin(obs.wingPhase) * 16);
-      ctx.stroke();
-      ctx.restore();
-    }
+    if (obs.type === 'ROCK') drawRock(obs);
+    else drawEagle(obs);
   });
 
-  // Foods
-  foods.forEach(f => {
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    if (f.type === 'MEAT') {
-      // Bone
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(-13, -3, 26, 6);
-      // Meat Chunk
-      ctx.fillStyle = '#e63946';
-      ctx.beginPath();
-      ctx.arc(0, 0, 10, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // Golden Life Berry
-      ctx.fillStyle = '#06d6a0';
-      ctx.beginPath();
-      ctx.arc(0, 0, 11, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  });
+  foods.forEach(f => drawFood(f));
 
-  // Wolf
   wolf.draw();
 
-  // Particles
   particles.forEach(p => {
     ctx.globalAlpha = Math.max(0, p.life);
     ctx.fillStyle = p.color;
@@ -637,7 +1009,7 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-// Controls
+// Input Listeners
 window.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
     e.preventDefault();
