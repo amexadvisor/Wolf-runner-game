@@ -1478,4 +1478,255 @@ function drawObstacle(obs) {
     ctx.fill();
 
     ctx.fillStyle = '#fef08a';
-    ctx.
+    ctx.beginPath();
+    ctx.moveTo(18, -8);
+    ctx.quadraticCurveTo(31, -38 - flicker, 44, -8);
+    ctx.closePath();
+    ctx.fill();
+  } else if (obs.type === 'SPIRE') {
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(14, -obs.height * 0.75);
+    ctx.lineTo(26, -obs.height);
+    ctx.lineTo(40, -obs.height * 0.65);
+    ctx.lineTo(obs.width, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#475569';
+    ctx.beginPath();
+    ctx.moveTo(14, -obs.height * 0.75);
+    ctx.lineTo(26, -obs.height);
+    ctx.lineTo(28, 0);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawFood(f) {
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  ctx.rotate(-0.22);
+
+  ctx.fillStyle = '#f5f5f4';
+  ctx.fillRect(-17, -2.5, 12, 5);
+  ctx.beginPath();
+  ctx.arc(-17, -3, 3.5, 0, Math.PI * 2);
+  ctx.arc(-17, 3, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#fecdd3';
+  ctx.beginPath();
+  ctx.ellipse(2, 0, 13, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#991b1b';
+  ctx.beginPath();
+  ctx.ellipse(1, 0, 10.5, 7.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawFullScreenShadowBanner() {
+  if (!screenBanner.active) return;
+
+  const progress = 1 - (screenBanner.timer / screenBanner.duration);
+  const alpha = progress < 0.2
+    ? progress / 0.2
+    : (progress > 0.7 ? (1 - progress) / 0.3 : 1);
+
+  const scale = 0.94 + progress * 0.1;
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+
+  const vigGrad = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, 90,
+    canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.65
+  );
+  vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0.12)');
+  if (screenBanner.theme === 'CRIMSON') {
+    vigGrad.addColorStop(1, 'rgba(127, 29, 29, 0.78)');
+  } else {
+    vigGrad.addColorStop(1, 'rgba(3, 5, 9, 0.78)');
+  }
+  ctx.fillStyle = vigGrad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.translate(canvas.width / 2, canvas.height / 2 - 10);
+  ctx.scale(scale, scale);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const fontSize = screenMode === 'PORTRAIT' ? 40 : 52;
+  ctx.font = `900 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.98)';
+  ctx.shadowBlur = 26;
+  ctx.shadowOffsetY = 8;
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+  ctx.lineWidth = 8;
+  ctx.strokeText(screenBanner.title, 0, 0);
+
+  ctx.fillStyle = screenBanner.theme === 'CRIMSON' ? '#f87171' : '#fef3c7';
+  ctx.fillText(screenBanner.title, 0, 0);
+
+  ctx.font = '800 14px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = '#cbd5e1';
+  ctx.fillText(screenBanner.subtitle, 0, 36);
+
+  ctx.restore();
+}
+
+function triggerGameOver() {
+  gameState = 'GAMEOVER';
+  overlayTitle.textContent = 'Run Ended';
+  overlayDesc.innerHTML = `Skill Score: <strong style="color:#fbbf24;">${skillScore}</strong> &bull; Hazard Tiers Unlocked: <strong>${highestTierUnlocked} / ${UNLOCK_TIERS.length}</strong>`;
+  startBtn.textContent = 'RUN AGAIN';
+  restartFromPauseBtn.classList.add('hidden');
+  overlay.classList.remove('hidden');
+}
+
+function resetGame() {
+  syncViewportDimensions();
+  wolf.reset();
+  skillScore = 0;
+  streak = 0;
+  multiplier = 1;
+  highestTierUnlocked = 0;
+  gameSpeed = screenMode === 'PORTRAIT' ? 380 : 430;
+  obstacles = [];
+  foods = [];
+  particles = [];
+  spawnObsTimer = 1.0;
+  spawnFoodTimer = 1.8;
+  screenBanner.active = false;
+  restartFromPauseBtn.classList.add('hidden');
+  lastTime = performance.now();
+  gameState = 'PLAYING';
+  updateHUD();
+}
+
+function gameLoop(timestamp) {
+  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+  lastTime = timestamp;
+
+  ctx.save();
+  if (screenShake > 0 && gameState === 'PLAYING') {
+    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+    screenShake = Math.max(0, screenShake - dt * 30);
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawEnvironment();
+
+  if (gameState === 'PLAYING') {
+    updateGame(dt);
+  }
+
+  obstacles.forEach(drawObstacle);
+  foods.forEach(drawFood);
+  wolf.draw();
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    if (gameState === 'PLAYING') {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt * 2.3;
+    }
+    if (p.life <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+    ctx.globalAlpha = p.life;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  drawFullScreenShadowBanner();
+
+  ctx.restore();
+  requestAnimationFrame(gameLoop);
+}
+
+// Controller Listeners
+btnUp.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  btnUp.classList.add('pressed');
+  wolf.leap();
+});
+const releaseUp = () => btnUp.classList.remove('pressed');
+btnUp.addEventListener('pointerup', releaseUp);
+btnUp.addEventListener('pointerleave', releaseUp);
+btnUp.addEventListener('pointercancel', releaseUp);
+
+btnDown.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  btnDown.classList.add('pressed');
+  wolf.setCrouch(true);
+});
+const releaseDown = () => {
+  btnDown.classList.remove('pressed');
+  wolf.setCrouch(false);
+};
+btnDown.addEventListener('pointerup', releaseDown);
+btnDown.addEventListener('pointerleave', releaseDown);
+btnDown.addEventListener('pointercancel', releaseDown);
+
+window.addEventListener('keydown', e => {
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    e.preventDefault();
+    if (gameState === 'PLAYING') pauseGame('Game Paused');
+    else if (gameState === 'PAUSED') resumeGame();
+    return;
+  }
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    e.preventDefault();
+    btnUp.classList.add('pressed');
+    wolf.leap();
+  } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+    e.preventDefault();
+    btnDown.classList.add('pressed');
+    wolf.setCrouch(true);
+  }
+});
+
+window.addEventListener('keyup', e => {
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    btnUp.classList.remove('pressed');
+  } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+    btnDown.classList.remove('pressed');
+    wolf.setCrouch(false);
+  }
+});
+
+startBtn.addEventListener('click', () => {
+  if (gameState === 'PAUSED') {
+    resumeGame();
+  } else {
+    overlay.classList.add('hidden');
+    resetGame();
+  }
+});
+
+restartFromPauseBtn.addEventListener('click', () => {
+  overlay.classList.add('hidden');
+  resetGame();
+});
+
+requestAnimationFrame(ts => {
+  lastTime = ts;
+  gameLoop(ts);
+});
+</script>
+</body>
+</html>
