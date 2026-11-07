@@ -41,6 +41,7 @@
       border: 1.5px solid rgba(255, 255, 255, 0.12);
       background: #070a0f;
     }
+    /* Mobile full-fit modes respect browser address bar & bottom home bar */
     #gameContainer.portrait-mode,
     #gameContainer.landscape-fullscreen {
       max-width: 100%;
@@ -54,7 +55,7 @@
       height: 100%;
     }
 
-    /* Minimalist HUD */
+    /* Realistic Minimalist HUD */
     #hud {
       position: absolute;
       top: max(12px, env(safe-area-inset-top, 12px));
@@ -118,6 +119,7 @@
       color: #fbbf24;
     }
 
+    /* Top-Right Score + Pause Button Row */
     .top-right-panel {
       display: flex;
       align-items: center;
@@ -173,7 +175,7 @@
       border-color: #fbbf24;
     }
 
-    /* 2-Button Controller */
+    /* Sleek 2-Button Controller with Safe Bottom Margin (Never Cut Off) */
     #controls {
       position: absolute;
       bottom: calc(18px + env(safe-area-inset-bottom, 12px));
@@ -254,8 +256,60 @@
       color: #cbd5e1;
       max-width: 520px;
       line-height: 1.5;
-      margin-bottom: 20px;
+      margin-bottom: 14px;
     }
+
+    /* Orientation Selector Card */
+    #orientationBox {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 16px;
+      background: rgba(15, 23, 34, 0.75);
+      padding: 10px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+    }
+    .orient-title {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.4px;
+      color: #fbbf24;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .orient-options {
+      display: flex;
+      gap: 10px;
+    }
+    .orient-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 9px;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1.5px solid rgba(148, 163, 184, 0.3);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .orient-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.2;
+    }
+    .orient-btn.active {
+      background: rgba(245, 158, 11, 0.22);
+      border-color: #fbbf24;
+      color: #fef3c7;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+    }
+
     .overlay-actions {
       display: flex;
       gap: 12px;
@@ -325,6 +379,7 @@
     </div>
   </div>
 
+  <!-- Sleek Two-Button Glass Controller: DOWN (Left) & UP (Right) -->
   <div id="controls">
     <div class="ctrl-btn" id="btnDown" role="button" aria-label="Crouch or Dive">
       <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
@@ -342,6 +397,21 @@
       Use <strong>LEAP</strong> to jump &amp; double-jump. Hold <strong>CROUCH</strong> to slide under logs, duck swooping eagles, or fast-dive.<br>
       Higher scores unlock <strong>11 realistic wilderness hazards</strong>.
     </p>
+
+    <!-- Screen Size / Orientation Selector -->
+    <div id="orientationBox">
+      <div class="orient-title" id="orientLabel">CHOOSE SCREEN MODE</div>
+      <div class="orient-options">
+        <button class="orient-btn active" id="btnLandscape" type="button">
+          <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
+          LANDSCAPE
+        </button>
+        <button class="orient-btn" id="btnPortrait" type="button">
+          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
+          PORTRAIT
+        </button>
+      </div>
+    </div>
 
     <div class="overlay-actions">
       <button class="primary-btn" id="startBtn">BEGIN THE RUN</button>
@@ -369,13 +439,19 @@ const startBtn = document.getElementById('startBtn');
 const restartFromPauseBtn = document.getElementById('restartFromPauseBtn');
 const btnUp = document.getElementById('btnUp');
 const btnDown = document.getElementById('btnDown');
+const btnLandscape = document.getElementById('btnLandscape');
+const btnPortrait = document.getElementById('btnPortrait');
+const orientLabel = document.getElementById('orientLabel');
 
-// Auto-detect screen mode based on device dimensions
 const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 950);
 let screenMode = (isMobileDevice && window.innerHeight > window.innerWidth) ? 'PORTRAIT' : 'LANDSCAPE';
 let GROUND_Y = 395;
 
-let gameState = 'MENU';
+if (isMobileDevice) {
+  orientLabel.textContent = 'PHONE DETECTED — CHOOSE SCREEN ORIENTATION';
+}
+
+let gameState = 'MENU'; // 'MENU', 'PLAYING', 'PAUSED', 'GAMEOVER'
 let lastTime = 0;
 
 let skillScore = 0;
@@ -421,6 +497,9 @@ let particles = [];
 let spawnObsTimer = 0;
 let spawnFoodTimer = 0;
 
+// ======================================================
+// HYPER-REALISTIC 4-LEGGED TIMBER WOLF
+// ======================================================
 const wolf = {
   x: 145,
   y: GROUND_Y,
@@ -605,9 +684,11 @@ const wolf = {
     ctx.translate(0, -bounce + crouchDrop);
     ctx.rotate(pitchAngle);
 
+    // 1. Far-side Legs
     this.drawCanineLimb({ hipX: 25, hipY: -24, phase: 2.5, isFront: false, isFarSide: true });
     this.drawCanineLimb({ hipX: 68, hipY: -24, phase: 5.4, isFront: true, isFarSide: true });
 
+    // Bushy Tail
     const tailWave = Math.sin(this.runCycle) * 5;
     const tailGrad = ctx.createLinearGradient(-28, -25, 12, -30);
     tailGrad.addColorStop(0, '#1c1917');
@@ -621,6 +702,7 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // Torso
     const coatGrad = ctx.createLinearGradient(0, -46, 0, -14);
     coatGrad.addColorStop(0, '#1c1917');
     coatGrad.addColorStop(0.48, '#57534e');
@@ -637,6 +719,7 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // Neck Ruff
     ctx.fillStyle = '#44403c';
     ctx.beginPath();
     ctx.moveTo(48, -42);
@@ -648,9 +731,11 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // 2. Near-side Legs
     this.drawCanineLimb({ hipX: 16, hipY: -25, phase: 0.0, isFront: false, isFarSide: false });
     this.drawCanineLimb({ hipX: 58, hipY: -25, phase: 3.1, isFront: true, isFarSide: false });
 
+    // Back Ear
     ctx.fillStyle = '#292524';
     ctx.beginPath();
     ctx.moveTo(66, -46);
@@ -659,6 +744,7 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // Head & Muzzle
     const headGrad = ctx.createLinearGradient(58, -52, 88, -30);
     headGrad.addColorStop(0, '#292524');
     headGrad.addColorStop(0.6, '#57534e');
@@ -675,6 +761,7 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // White Jaw
     ctx.fillStyle = '#e7e5e4';
     ctx.beginPath();
     ctx.moveTo(65, -28);
@@ -685,6 +772,7 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // Near Ear
     ctx.fillStyle = '#44403c';
     ctx.beginPath();
     ctx.moveTo(61, -45);
@@ -700,6 +788,7 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
+    // Nose & Eye
     ctx.fillStyle = '#090a0f';
     ctx.beginPath();
     ctx.arc(93, -41.5, 2.6, 0, Math.PI * 2);
@@ -727,6 +816,7 @@ const wolf = {
   }
 };
 
+// Dynamic Parallax Layers
 let stars = [];
 let mountains = [];
 let farTrees = [];
@@ -773,13 +863,11 @@ function rebuildEnvironmentLayers() {
   }));
 }
 
+// Responsive Screen Mode & Viewport Sync (Prevents Address Bar Cut-Off!)
 function syncViewportDimensions() {
   const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   document.body.style.height = `${vh}px`;
-
-  // Auto-detect orientation from device geometry
-  screenMode = (isMobileDevice && vh > vw) ? 'PORTRAIT' : 'LANDSCAPE';
 
   const prevGround = GROUND_Y;
 
@@ -787,7 +875,9 @@ function syncViewportDimensions() {
     gameContainer.classList.add('portrait-mode');
     gameContainer.classList.remove('landscape-fullscreen');
     canvas.width = 500;
+    // Scale internal canvas height to match exact visible browser aspect ratio
     canvas.height = Math.max(720, Math.min(980, Math.round(500 * (vh / Math.max(1, vw)))));
+    // Keep GROUND_Y well above the bottom controller buttons so nothing is ever cut off
     GROUND_Y = canvas.height - 155;
     wolf.x = 68;
   } else {
@@ -799,10 +889,12 @@ function syncViewportDimensions() {
     }
     canvas.width = 1000;
     canvas.height = 500;
+    // Raised ground level so wolf, traps, and buttons sit safely above the mobile bottom bar
     GROUND_Y = 385;
     wolf.x = 135;
   }
 
+  // Adjust existing entities smoothly if resized mid-game
   const deltaY = GROUND_Y - prevGround;
   wolf.y = Math.min(GROUND_Y, wolf.y + deltaY);
   obstacles.forEach(obs => {
@@ -817,14 +909,37 @@ function syncViewportDimensions() {
   rebuildEnvironmentLayers();
 }
 
+function applyScreenMode(mode) {
+  screenMode = mode;
+  btnLandscape.classList.toggle('active', mode === 'LANDSCAPE');
+  btnPortrait.classList.toggle('active', mode === 'PORTRAIT');
+  syncViewportDimensions();
+}
+
 window.addEventListener('resize', syncViewportDimensions);
 if (window.visualViewport) {
   window.visualViewport.addEventListener('resize', syncViewportDimensions);
 }
 
-syncViewportDimensions();
+btnLandscape.addEventListener('click', () => {
+  applyScreenMode('LANDSCAPE');
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+});
 
-// Pause & Auto-pause functionality
+btnPortrait.addEventListener('click', () => {
+  applyScreenMode('PORTRAIT');
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(() => {});
+  }
+});
+
+applyScreenMode(screenMode);
+
+// ======================================================
+// PAUSE & AUTO-PAUSE WHEN LEAVING BROWSER
+// ======================================================
 function pauseGame(reason = 'Game Paused') {
   if (gameState !== 'PLAYING') return;
   gameState = 'PAUSED';
@@ -857,6 +972,7 @@ pauseBtn.addEventListener('pointerdown', e => {
   }
 });
 
+// Auto-pause whenever user switches tabs, minimizes browser, or locks phone
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && gameState === 'PLAYING') {
     pauseGame('Auto-Paused');
@@ -873,6 +989,9 @@ window.addEventListener('pagehide', () => {
   }
 });
 
+// ======================================================
+// 11-OBSTACLE PROGRESSIVE SPAWNER
+// ======================================================
 function checkTierUnlocks() {
   for (let i = highestTierUnlocked; i < UNLOCK_TIERS.length; i++) {
     if (skillScore >= UNLOCK_TIERS[i].score) {
@@ -1021,6 +1140,15 @@ function spawnFood() {
   });
 }
 
+function checkOverlap(a, b) {
+  return (
+    a.x < b.x + b.width &&
+    a.x + a.width > b.x &&
+    a.y < b.y + b.height &&
+    a.y + a.height > b.y
+  );
+}
+
 function updateHUD() {
   const pct = Math.max(0, Math.ceil((wolf.hp / wolf.maxHp) * 100));
   hpFill.style.width = `${pct}%`;
@@ -1148,6 +1276,9 @@ function updateGame(dt) {
   }
 }
 
+// ======================================================
+// ENVIRONMENT & OBSTACLE RENDERERS
+// ======================================================
 function drawPineSilhouette(x, bottomY, w, h, color) {
   ctx.fillStyle = color;
   for (let tier = 0; tier < 3; tier++) {
@@ -1658,7 +1789,9 @@ function gameLoop(timestamp) {
   requestAnimationFrame(gameLoop);
 }
 
-// Controller Listeners
+// ==========================================
+// TWO-BUTTON CONTROLLER (UP & DOWN) + KEYBOARD
+// ==========================================
 btnUp.addEventListener('pointerdown', e => {
   e.preventDefault();
   btnUp.classList.add('pressed');
