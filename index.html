@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Alpha Wolf: Realistic Wilderness Runner</title>
   <style>
     * {
@@ -16,40 +16,36 @@
       outline: none;
       touch-action: none;
     }
-    body {
+    html, body {
       background-color: #040608;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      position: fixed;
+      inset: 0;
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 100vw;
-      height: 100vh;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      overflow: hidden;
     }
     #gameContainer {
       position: relative;
-      width: 1000px;
-      height: 520px;
-      max-width: 100vw;
-      max-height: 100vh;
+      width: 100%;
+      height: 100%;
+      max-width: 1000px;
+      max-height: 520px;
       box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95);
       border-radius: 14px;
       overflow: hidden;
       border: 1.5px solid rgba(255, 255, 255, 0.12);
       background: #070a0f;
-      transition: width 0.25s ease, height 0.25s ease, border-radius 0.25s ease;
     }
-    #gameContainer.portrait-mode {
-      width: 100vw;
-      height: 100vh;
-      max-width: 480px;
-      max-height: 920px;
-      border-radius: 0;
-      border: none;
-    }
+    /* Mobile full-fit modes respect browser address bar & bottom home bar */
+    #gameContainer.portrait-mode,
     #gameContainer.landscape-fullscreen {
-      width: 100vw;
-      height: 100vh;
+      max-width: 100%;
+      max-height: 100%;
       border-radius: 0;
       border: none;
     }
@@ -62,9 +58,9 @@
     /* Realistic Minimalist HUD */
     #hud {
       position: absolute;
-      top: 16px;
-      left: 20px;
-      right: 20px;
+      top: max(12px, env(safe-area-inset-top, 12px));
+      left: max(16px, env(safe-area-inset-left, 16px));
+      right: max(16px, env(safe-area-inset-right, 16px));
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
@@ -74,24 +70,24 @@
     .health-panel {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      width: 210px;
+      gap: 4px;
+      width: clamp(150px, 38vw, 220px);
     }
     .health-header {
       display: flex;
       justify-content: space-between;
       font-size: 11px;
       font-weight: 800;
-      letter-spacing: 1.2px;
+      letter-spacing: 1.1px;
       color: #cbd5e1;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
     .bar-track {
       width: 100%;
-      height: 13px;
+      height: 12px;
       background: rgba(12, 16, 22, 0.85);
       border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 7px;
+      border-radius: 6px;
       overflow: hidden;
       position: relative;
       box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
@@ -116,21 +112,31 @@
       font-size: 10px;
       color: #a8a29e;
       font-weight: 700;
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
       text-shadow: 0 2px 4px #000;
     }
     .tier-badge span {
       color: #fbbf24;
     }
+
+    /* Top-Right Score + Pause Button Row */
+    .top-right-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
     .score-panel {
       text-align: right;
       color: #f8fafc;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+      pointer-events: none;
     }
     .score-main {
-      font-size: 24px;
+      font-size: clamp(18px, 4vw, 24px);
       font-weight: 900;
       letter-spacing: 1px;
+      line-height: 1.1;
     }
     .score-main span {
       color: #f59e0b;
@@ -142,13 +148,39 @@
       letter-spacing: 0.8px;
       margin-top: 2px;
     }
+    #pauseBtn {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: rgba(15, 20, 28, 0.68);
+      border: 1.5px solid rgba(255, 255, 255, 0.24);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #f8fafc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+      transition: transform 0.1s ease, background 0.15s ease, border-color 0.15s ease;
+    }
+    #pauseBtn svg {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+    #pauseBtn:active {
+      transform: scale(0.9);
+      background: rgba(245, 158, 11, 0.35);
+      border-color: #fbbf24;
+    }
 
-    /* Sleek 2-Button Controller (Only UP & DOWN, Zero Blue Highlight) */
+    /* Sleek 2-Button Controller with Safe Bottom Margin (Never Cut Off) */
     #controls {
       position: absolute;
-      bottom: 24px;
-      left: 24px;
-      right: 24px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 12px));
+      left: max(20px, env(safe-area-inset-left, 20px));
+      right: max(20px, env(safe-area-inset-right, 20px));
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -157,25 +189,25 @@
     }
     .ctrl-btn {
       pointer-events: auto;
-      width: 92px;
-      height: 92px;
+      width: clamp(72px, 16vmin, 90px);
+      height: clamp(72px, 16vmin, 90px);
       border-radius: 50%;
-      background: rgba(15, 20, 28, 0.55);
-      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      background: rgba(15, 20, 28, 0.62);
+      border: 1.5px solid rgba(255, 255, 255, 0.25);
       backdrop-filter: blur(8px);
       -webkit-backdrop-filter: blur(8px);
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      color: rgba(248, 250, 252, 0.9);
+      color: rgba(248, 250, 252, 0.92);
       cursor: pointer;
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.18);
       transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;
     }
     .ctrl-btn svg {
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       fill: none;
       stroke: currentColor;
       stroke-width: 2.8;
@@ -183,11 +215,11 @@
       stroke-linejoin: round;
     }
     .ctrl-btn span {
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 800;
-      letter-spacing: 1.2px;
-      margin-top: 3px;
-      color: rgba(203, 213, 225, 0.8);
+      letter-spacing: 1.1px;
+      margin-top: 2px;
+      color: rgba(203, 213, 225, 0.85);
     }
     .ctrl-btn.pressed {
       transform: scale(0.91);
@@ -196,7 +228,7 @@
       color: #fef3c7;
     }
 
-    /* Start / Game Over Overlay & Orientation Picker */
+    /* Start / Pause / Game Over Overlay */
     #overlay {
       position: absolute;
       inset: 0;
@@ -208,65 +240,65 @@
       color: #fff;
       text-align: center;
       backdrop-filter: blur(6px);
-      padding: 20px;
+      padding: 18px;
       z-index: 15;
     }
     #overlay h1 {
-      font-size: clamp(28px, 5vw, 42px);
-      margin-bottom: 8px;
+      font-size: clamp(24px, 5vw, 40px);
+      margin-bottom: 6px;
       color: #f8fafc;
       text-transform: uppercase;
       letter-spacing: 2.5px;
       text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
     }
     #overlay p {
-      font-size: clamp(13px, 2.5vw, 15px);
+      font-size: clamp(12px, 2.3vw, 14px);
       color: #cbd5e1;
-      max-width: 540px;
-      line-height: 1.55;
-      margin-bottom: 18px;
+      max-width: 520px;
+      line-height: 1.5;
+      margin-bottom: 14px;
     }
 
-    /* Orientation Selector Card for Mobile / All Users */
+    /* Orientation Selector Card */
     #orientationBox {
       display: flex;
       flex-direction: column;
       align-items: center;
-      margin-bottom: 22px;
+      margin-bottom: 16px;
       background: rgba(15, 23, 34, 0.75);
-      padding: 14px 20px;
-      border-radius: 14px;
+      padding: 10px 16px;
+      border-radius: 12px;
       border: 1px solid rgba(255, 255, 255, 0.14);
     }
     .orient-title {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 800;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.4px;
       color: #fbbf24;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       text-transform: uppercase;
     }
     .orient-options {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
     .orient-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 10px 16px;
-      border-radius: 10px;
+      gap: 7px;
+      padding: 8px 14px;
+      border-radius: 9px;
       background: rgba(30, 41, 59, 0.7);
       border: 1.5px solid rgba(148, 163, 184, 0.3);
       color: #cbd5e1;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 800;
       cursor: pointer;
       transition: all 0.15s ease;
     }
     .orient-btn svg {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       stroke: currentColor;
       fill: none;
       stroke-width: 2.2;
@@ -278,9 +310,14 @@
       box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
     }
 
-    #startBtn {
-      padding: 14px 44px;
-      font-size: 17px;
+    .overlay-actions {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .primary-btn {
+      padding: 12px 38px;
+      font-size: 16px;
       font-weight: 900;
       color: #090d14;
       background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
@@ -288,11 +325,22 @@
       border-radius: 30px;
       cursor: pointer;
       box-shadow: 0 6px 24px rgba(217, 119, 6, 0.5);
-      letter-spacing: 1.5px;
+      letter-spacing: 1.4px;
       transition: transform 0.15s ease;
     }
-    #startBtn:hover {
-      transform: scale(1.05);
+    .primary-btn:hover {
+      transform: scale(1.04);
+    }
+    .secondary-btn {
+      padding: 12px 26px;
+      font-size: 14px;
+      font-weight: 800;
+      color: #e2e8f0;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1.5px solid rgba(148, 163, 184, 0.4);
+      border-radius: 30px;
+      cursor: pointer;
+      letter-spacing: 1px;
     }
     .hidden {
       display: none !important;
@@ -317,9 +365,17 @@
       <div class="tier-badge" id="unlockDisplay">NEXT HAZARD: <span>SCORE 6</span></div>
     </div>
 
-    <div class="score-panel">
-      <div class="score-main">SCORE: <span id="scoreDisplay">0</span></div>
-      <div class="score-sub" id="streakDisplay">STREAK: 0 (x1)</div>
+    <div class="top-right-panel">
+      <div class="score-panel">
+        <div class="score-main">SCORE: <span id="scoreDisplay">0</span></div>
+        <div class="score-sub" id="streakDisplay">STREAK: 0 (x1)</div>
+      </div>
+      <button id="pauseBtn" type="button" aria-label="Pause Game" title="Pause (P)">
+        <svg viewBox="0 0 24 24" id="pauseIcon">
+          <rect x="6" y="4" width="4" height="16" rx="1"/>
+          <rect x="14" y="4" width="4" height="16" rx="1"/>
+        </svg>
+      </button>
     </div>
   </div>
 
@@ -357,7 +413,10 @@
       </div>
     </div>
 
-    <button id="startBtn">BEGIN THE RUN</button>
+    <div class="overlay-actions">
+      <button class="primary-btn" id="startBtn">BEGIN THE RUN</button>
+      <button class="secondary-btn hidden" id="restartFromPauseBtn">RESTART</button>
+    </div>
   </div>
 </div>
 
@@ -372,69 +431,29 @@ const hpText = document.getElementById('hpText');
 const scoreDisplay = document.getElementById('scoreDisplay');
 const streakDisplay = document.getElementById('streakDisplay');
 const unlockDisplay = document.getElementById('unlockDisplay');
+const pauseBtn = document.getElementById('pauseBtn');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlayTitle');
 const overlayDesc = document.getElementById('overlayDesc');
 const startBtn = document.getElementById('startBtn');
+const restartFromPauseBtn = document.getElementById('restartFromPauseBtn');
 const btnUp = document.getElementById('btnUp');
 const btnDown = document.getElementById('btnDown');
 const btnLandscape = document.getElementById('btnLandscape');
 const btnPortrait = document.getElementById('btnPortrait');
 const orientLabel = document.getElementById('orientLabel');
 
-// Detect Mobile / Touch Device and auto-select Portrait if holding phone vertically
-const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 900);
+const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 950);
 let screenMode = (isMobileDevice && window.innerHeight > window.innerWidth) ? 'PORTRAIT' : 'LANDSCAPE';
-let GROUND_Y = 425;
+let GROUND_Y = 395;
 
 if (isMobileDevice) {
   orientLabel.textContent = 'PHONE DETECTED — CHOOSE SCREEN ORIENTATION';
 }
 
-function applyScreenMode(mode) {
-  screenMode = mode;
-  btnLandscape.classList.toggle('active', mode === 'LANDSCAPE');
-  btnPortrait.classList.toggle('active', mode === 'PORTRAIT');
-
-  if (mode === 'PORTRAIT') {
-    gameContainer.classList.add('portrait-mode');
-    gameContainer.classList.remove('landscape-fullscreen');
-    canvas.width = 540;
-    canvas.height = 960;
-    GROUND_Y = 740;
-    wolf.x = 75;
-  } else {
-    gameContainer.classList.remove('portrait-mode');
-    if (isMobileDevice) {
-      gameContainer.classList.add('landscape-fullscreen');
-    }
-    canvas.width = 1000;
-    canvas.height = 520;
-    GROUND_Y = 425;
-    wolf.x = 145;
-  }
-  wolf.y = GROUND_Y;
-  rebuildEnvironmentLayers();
-}
-
-btnLandscape.addEventListener('click', () => {
-  applyScreenMode('LANDSCAPE');
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(() => {});
-  }
-});
-
-btnPortrait.addEventListener('click', () => {
-  applyScreenMode('PORTRAIT');
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('portrait').catch(() => {});
-  }
-});
-
-let gameState = 'MENU';
+let gameState = 'MENU'; // 'MENU', 'PLAYING', 'PAUSED', 'GAMEOVER'
 let lastTime = 0;
 
-// Skill-based low-number scoring & streak progression
 let skillScore = 0;
 let streak = 0;
 let multiplier = 1;
@@ -442,7 +461,6 @@ let gameSpeed = 430;
 let screenShake = 0;
 let highestTierUnlocked = 0;
 
-// 9 Progressive Unlock Tiers (Total 11 Obstacle Types including Base Boulder & Bear Trap)
 const UNLOCK_TIERS = [
   { score: 6,   name: 'HOLLOW LOGS' },
   { score: 15,  name: 'HUNTING EAGLES' },
@@ -455,7 +473,6 @@ const UNLOCK_TIERS = [
   { score: 195, name: 'JAGGED SPIRES' }
 ];
 
-// Rare Full-Screen Shadow Banner State (Appears ONLY on major streak milestones 10, 25, 50 or losing a 10+ streak)
 const screenBanner = {
   active: false,
   title: '',
@@ -480,48 +497,6 @@ let particles = [];
 let spawnObsTimer = 0;
 let spawnFoodTimer = 0;
 
-function checkTierUnlocks() {
-  for (let i = highestTierUnlocked; i < UNLOCK_TIERS.length; i++) {
-    if (skillScore >= UNLOCK_TIERS[i].score) {
-      highestTierUnlocked = i + 1;
-    }
-  }
-}
-
-function addSkillPoints(basePts) {
-  streak++;
-  multiplier = Math.min(4, 1 + Math.floor(streak / 8));
-  const pts = basePts * multiplier;
-  skillScore += pts;
-
-  // RARE Streak Shadow Text: Only triggers at major streak milestones (10, 25, 50, 75...)
-  if (streak === 10 || streak === 25 || streak === 50 || (streak > 50 && streak % 25 === 0)) {
-    triggerFullScreenShadowText(
-      `${streak} STREAK`,
-      `MULTIPLIER x${multiplier}`,
-      'GOLD',
-      1.2
-    );
-  }
-
-  checkTierUnlocks();
-  updateHUD();
-}
-
-function createParticles(x, y, color, count = 10, speed = 210) {
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x,
-      y,
-      vx: (Math.random() - 0.65) * speed,
-      vy: (Math.random() - 0.8) * speed,
-      size: Math.random() * 4 + 1.5,
-      color,
-      life: 1
-    });
-  }
-}
-
 // ======================================================
 // HYPER-REALISTIC 4-LEGGED TIMBER WOLF
 // ======================================================
@@ -539,7 +514,7 @@ const wolf = {
   runCycle: 0,
 
   reset() {
-    this.x = screenMode === 'PORTRAIT' ? 75 : 145;
+    this.x = screenMode === 'PORTRAIT' ? 68 : 135;
     this.y = GROUND_Y;
     this.vy = 0;
     this.jumpsLeft = 2;
@@ -572,14 +547,8 @@ const wolf = {
     this.hp = Math.max(0, this.hp - amount);
     this.invincibleTimer = 1.15;
 
-    // Only show Full-Screen Shadow Text on streak loss if the player had a high streak (10+)
     if (streak >= 10) {
-      triggerFullScreenShadowText(
-        'STREAK LOST',
-        `${streak} STREAK ENDED`,
-        'CRIMSON',
-        1.25
-      );
+      triggerFullScreenShadowText('STREAK LOST', `${streak} STREAK ENDED`, 'CRIMSON', 1.25);
     }
 
     streak = 0;
@@ -623,7 +592,6 @@ const wolf = {
 
   drawCanineLimb({ hipX, hipY, phase, isFront, isFarSide }) {
     const isAirborne = this.y < GROUND_Y;
-
     let swingAngle;
     let kneeFlex;
     if (isAirborne) {
@@ -848,7 +816,7 @@ const wolf = {
   }
 };
 
-// Dynamic Parallax Layers (Rebuilt when switching Portrait/Landscape)
+// Dynamic Parallax Layers
 let stars = [];
 let mountains = [];
 let farTrees = [];
@@ -867,18 +835,18 @@ function rebuildEnvironmentLayers() {
   mountains = Array.from({ length: 7 }, (_, i) => ({
     x: i * 180,
     w: 260,
-    h: 150 + (i % 3) * 35
+    h: 140 + (i % 3) * 30
   }));
 
   farTrees = Array.from({ length: 26 }, (_, i) => ({
     x: i * 44,
-    h: 70 + (i % 4) * 18,
+    h: 65 + (i % 4) * 16,
     w: 32
   }));
 
   midTrees = Array.from({ length: 18 }, (_, i) => ({
     x: i * 68,
-    h: 110 + (i % 3) * 28,
+    h: 100 + (i % 3) * 24,
     w: 48
   }));
 
@@ -889,17 +857,177 @@ function rebuildEnvironmentLayers() {
 
   fireflies = Array.from({ length: 18 }, () => ({
     x: Math.random() * canvas.width,
-    y: GROUND_Y - 20 - Math.random() * 140,
+    y: GROUND_Y - 20 - Math.random() * 130,
     phase: Math.random() * Math.PI * 2,
     speed: 0.4 + Math.random() * 0.5
   }));
 }
 
+// Responsive Screen Mode & Viewport Sync (Prevents Address Bar Cut-Off!)
+function syncViewportDimensions() {
+  const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.body.style.height = `${vh}px`;
+
+  const prevGround = GROUND_Y;
+
+  if (screenMode === 'PORTRAIT') {
+    gameContainer.classList.add('portrait-mode');
+    gameContainer.classList.remove('landscape-fullscreen');
+    canvas.width = 500;
+    // Scale internal canvas height to match exact visible browser aspect ratio
+    canvas.height = Math.max(720, Math.min(980, Math.round(500 * (vh / Math.max(1, vw)))));
+    // Keep GROUND_Y well above the bottom controller buttons so nothing is ever cut off
+    GROUND_Y = canvas.height - 155;
+    wolf.x = 68;
+  } else {
+    gameContainer.classList.remove('portrait-mode');
+    if (isMobileDevice) {
+      gameContainer.classList.add('landscape-fullscreen');
+    } else {
+      gameContainer.classList.remove('landscape-fullscreen');
+    }
+    canvas.width = 1000;
+    canvas.height = 500;
+    // Raised ground level so wolf, traps, and buttons sit safely above the mobile bottom bar
+    GROUND_Y = 385;
+    wolf.x = 135;
+  }
+
+  // Adjust existing entities smoothly if resized mid-game
+  const deltaY = GROUND_Y - prevGround;
+  wolf.y = Math.min(GROUND_Y, wolf.y + deltaY);
+  obstacles.forEach(obs => {
+    obs.y += deltaY;
+    if (obs.baseY !== undefined) obs.baseY += deltaY;
+  });
+  foods.forEach(f => {
+    f.y += deltaY;
+    f.baseY += deltaY;
+  });
+
+  rebuildEnvironmentLayers();
+}
+
+function applyScreenMode(mode) {
+  screenMode = mode;
+  btnLandscape.classList.toggle('active', mode === 'LANDSCAPE');
+  btnPortrait.classList.toggle('active', mode === 'PORTRAIT');
+  syncViewportDimensions();
+}
+
+window.addEventListener('resize', syncViewportDimensions);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', syncViewportDimensions);
+}
+
+btnLandscape.addEventListener('click', () => {
+  applyScreenMode('LANDSCAPE');
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+});
+
+btnPortrait.addEventListener('click', () => {
+  applyScreenMode('PORTRAIT');
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('portrait').catch(() => {});
+  }
+});
+
 applyScreenMode(screenMode);
 
 // ======================================================
-// 11-OBSTACLE PROGRESSIVE SPAWNER (Unlocks More as Score Increases)
+// PAUSE & AUTO-PAUSE WHEN LEAVING BROWSER
 // ======================================================
+function pauseGame(reason = 'Game Paused') {
+  if (gameState !== 'PLAYING') return;
+  gameState = 'PAUSED';
+  wolf.setCrouch(false);
+  btnUp.classList.remove('pressed');
+  btnDown.classList.remove('pressed');
+
+  overlayTitle.textContent = reason;
+  overlayDesc.innerHTML = `Current Score: <strong style="color:#fbbf24;">${skillScore}</strong> &bull; Streak: <strong>${streak} (x${multiplier})</strong>`;
+  startBtn.textContent = 'RESUME RUN';
+  restartFromPauseBtn.classList.remove('hidden');
+  overlay.classList.remove('hidden');
+}
+
+function resumeGame() {
+  if (gameState !== 'PAUSED') return;
+  overlay.classList.add('hidden');
+  restartFromPauseBtn.classList.add('hidden');
+  lastTime = performance.now();
+  gameState = 'PLAYING';
+}
+
+pauseBtn.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  e.stopPropagation();
+  if (gameState === 'PLAYING') {
+    pauseGame('Game Paused');
+  } else if (gameState === 'PAUSED') {
+    resumeGame();
+  }
+});
+
+// Auto-pause whenever user switches tabs, minimizes browser, or locks phone
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && gameState === 'PLAYING') {
+    pauseGame('Auto-Paused');
+  }
+});
+window.addEventListener('blur', () => {
+  if (gameState === 'PLAYING') {
+    pauseGame('Auto-Paused');
+  }
+});
+window.addEventListener('pagehide', () => {
+  if (gameState === 'PLAYING') {
+    pauseGame('Auto-Paused');
+  }
+});
+
+// ======================================================
+// 11-OBSTACLE PROGRESSIVE SPAWNER
+// ======================================================
+function checkTierUnlocks() {
+  for (let i = highestTierUnlocked; i < UNLOCK_TIERS.length; i++) {
+    if (skillScore >= UNLOCK_TIERS[i].score) {
+      highestTierUnlocked = i + 1;
+    }
+  }
+}
+
+function addSkillPoints(basePts) {
+  streak++;
+  multiplier = Math.min(4, 1 + Math.floor(streak / 8));
+  const pts = basePts * multiplier;
+  skillScore += pts;
+
+  if (streak === 10 || streak === 25 || streak === 50 || (streak > 50 && streak % 25 === 0)) {
+    triggerFullScreenShadowText(`${streak} STREAK`, `MULTIPLIER x${multiplier}`, 'GOLD', 1.2);
+  }
+
+  checkTierUnlocks();
+  updateHUD();
+}
+
+function createParticles(x, y, color, count = 10, speed = 210) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x,
+      y,
+      vx: (Math.random() - 0.65) * speed,
+      vy: (Math.random() - 0.8) * speed,
+      size: Math.random() * 4 + 1.5,
+      color,
+      life: 1
+    });
+  }
+}
+
 function spawnObstacle() {
   const pool = ['TRAP', 'BOULDER'];
   if (skillScore >= 6)   pool.push('OVERHANG_LOG', 'OVERHANG_LOG');
@@ -952,7 +1080,6 @@ function spawnObstacle() {
       passed: false
     });
   } else if (choice === 'VIPER') {
-    // Coiled Lunging Pit Viper (Score 90+)
     obstacles.push({
       type: 'VIPER',
       x: canvas.width + 70,
@@ -965,7 +1092,6 @@ function spawnObstacle() {
       passed: false
     });
   } else if (choice === 'MOOSE') {
-    // Charging Bull Moose with Massive Antlers (Score 120+)
     obstacles.push({
       type: 'MOOSE',
       x: canvas.width + 70,
@@ -978,7 +1104,6 @@ function spawnObstacle() {
       passed: false
     });
   } else if (choice === 'CAMPFIRE') {
-    // Blazing Hunter's Campfire (Score 155+)
     obstacles.push({
       type: 'CAMPFIRE',
       x: canvas.width + 70,
@@ -991,7 +1116,6 @@ function spawnObstacle() {
       passed: false
     });
   } else if (choice === 'SPIRE') {
-    // Tall Jagged Rockslide Spire (Score 195+)
     obstacles.push({
       type: 'SPIRE',
       x: canvas.width + 70,
@@ -1043,7 +1167,7 @@ function updateHUD() {
 
 function updateGame(dt) {
   wolf.update(dt);
-  const maxSpd = screenMode === 'PORTRAIT' ? 620 : 740;
+  const maxSpd = screenMode === 'PORTRAIT' ? 600 : 730;
   gameSpeed = Math.min(maxSpd, gameSpeed + dt * 5.0);
 
   if (screenBanner.active) {
@@ -1078,7 +1202,7 @@ function updateGame(dt) {
   spawnObsTimer -= dt;
   if (spawnObsTimer <= 0) {
     spawnObstacle();
-    const portraitGap = screenMode === 'PORTRAIT' ? 0.22 : 0;
+    const portraitGap = screenMode === 'PORTRAIT' ? 0.24 : 0;
     spawnObsTimer = Math.max(0.68 + portraitGap, 1.45 - gameSpeed * 0.0008 + Math.random() * 0.55);
   }
 
@@ -1153,7 +1277,7 @@ function updateGame(dt) {
 }
 
 // ======================================================
-// ENVIRONMENT & 11-OBSTACLE RENDERERS
+// ENVIRONMENT & OBSTACLE RENDERERS
 // ======================================================
 function drawPineSilhouette(x, bottomY, w, h, color) {
   ctx.fillStyle = color;
@@ -1185,18 +1309,18 @@ function drawEnvironment() {
     ctx.fill();
   });
 
-  const moonX = canvas.width - 140, moonY = 95;
-  const moonHalo = ctx.createRadialGradient(moonX, moonY, 32, moonX, moonY, 130);
+  const moonX = canvas.width - 135, moonY = 92;
+  const moonHalo = ctx.createRadialGradient(moonX, moonY, 30, moonX, moonY, 120);
   moonHalo.addColorStop(0, 'rgba(254, 249, 195, 0.28)');
   moonHalo.addColorStop(1, 'rgba(254, 249, 195, 0)');
   ctx.fillStyle = moonHalo;
   ctx.beginPath();
-  ctx.arc(moonX, moonY, 130, 0, Math.PI * 2);
+  ctx.arc(moonX, moonY, 120, 0, Math.PI * 2);
   ctx.fill();
 
   ctx.fillStyle = '#fefce8';
   ctx.beginPath();
-  ctx.arc(moonX, moonY, 36, 0, Math.PI * 2);
+  ctx.arc(moonX, moonY, 34, 0, Math.PI * 2);
   ctx.fill();
 
   mountains.forEach(m => {
@@ -1211,11 +1335,11 @@ function drawEnvironment() {
 
   farTrees.forEach(t => drawPineSilhouette(t.x, GROUND_Y, t.w, t.h, '#091119'));
 
-  const fogGrad = ctx.createLinearGradient(0, GROUND_Y - 70, 0, GROUND_Y);
+  const fogGrad = ctx.createLinearGradient(0, GROUND_Y - 65, 0, GROUND_Y);
   fogGrad.addColorStop(0, 'rgba(22, 36, 50, 0)');
   fogGrad.addColorStop(1, 'rgba(148, 163, 184, 0.12)');
   ctx.fillStyle = fogGrad;
-  ctx.fillRect(0, GROUND_Y - 70, canvas.width, 70);
+  ctx.fillRect(0, GROUND_Y - 65, canvas.width, 65);
 
   midTrees.forEach(t => drawPineSilhouette(t.x, GROUND_Y, t.w, t.h, '#050a0f'));
 
@@ -1229,7 +1353,7 @@ function drawEnvironment() {
 
   const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, canvas.height);
   groundGrad.addColorStop(0, '#1a241e');
-  groundGrad.addColorStop(0.2, '#121814');
+  groundGrad.addColorStop(0.25, '#121814');
   groundGrad.addColorStop(1, '#060807');
   ctx.fillStyle = groundGrad;
   ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
@@ -1414,7 +1538,6 @@ function drawObstacle(obs) {
     ctx.moveTo(0, -r + 5); ctx.lineTo(0, r - 5);
     ctx.stroke();
   } else if (obs.type === 'VIPER') {
-    // Coiled Lunging Pit Viper (Score 90+)
     const lunge = Math.sin(obs.strikePhase) * 6;
     ctx.strokeStyle = '#365314';
     ctx.lineWidth = 8;
@@ -1426,13 +1549,11 @@ function drawObstacle(obs) {
     ctx.lineTo(6 + lunge, -24);
     ctx.stroke();
 
-    // Viper Head & Fangs
     ctx.fillStyle = '#4d7c0f';
     ctx.beginPath();
     ctx.ellipse(5 + lunge, -24, 8, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Forked Red Tongue
     ctx.strokeStyle = '#ef4444';
     ctx.lineWidth = 1.8;
     ctx.beginPath();
@@ -1442,7 +1563,6 @@ function drawObstacle(obs) {
     ctx.lineTo(-11 + lunge, -22);
     ctx.stroke();
   } else if (obs.type === 'MOOSE') {
-    // Charging Bull Moose with Palmate Antlers (Score 120+)
     const swing = Math.sin(obs.legPhase) * 10;
     ctx.strokeStyle = '#271c15';
     ctx.lineWidth = 6;
@@ -1454,7 +1574,6 @@ function drawObstacle(obs) {
     ctx.moveTo(72, -24); ctx.lineTo(72 - swing, 0);
     ctx.stroke();
 
-    // Massive Humped Torso
     ctx.fillStyle = '#3e2723';
     ctx.beginPath();
     ctx.moveTo(78, -26);
@@ -1465,7 +1584,6 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
 
-    // Golden-Ivory Palmate Antlers
     ctx.fillStyle = '#fde68a';
     ctx.beginPath();
     ctx.moveTo(22, -48);
@@ -1478,13 +1596,10 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
   } else if (obs.type === 'CAMPFIRE') {
-    // Blazing Campfire (Score 155+)
     const flicker = Math.sin(obs.flamePhase) * 6;
-    // Charred Logs
     ctx.fillStyle = '#291d12';
     ctx.fillRect(6, -10, 50, 10);
 
-    // Outer Orange Flame
     ctx.fillStyle = 'rgba(234, 88, 12, 0.9)';
     ctx.beginPath();
     ctx.moveTo(10, -8);
@@ -1493,7 +1608,6 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
 
-    // Inner Yellow Core
     ctx.fillStyle = '#fef08a';
     ctx.beginPath();
     ctx.moveTo(18, -8);
@@ -1501,7 +1615,6 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
   } else if (obs.type === 'SPIRE') {
-    // Tall Jagged Rockslide Spire (Score 195+)
     ctx.fillStyle = '#1e293b';
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -1550,9 +1663,6 @@ function drawFood(f) {
   ctx.restore();
 }
 
-// ======================================================
-// FULL-SCREEN SHADOW-TYPE TEXT NOTIFICATION (RARE MILESTONES ONLY)
-// ======================================================
 function drawFullScreenShadowBanner() {
   if (!screenBanner.active) return;
 
@@ -1584,7 +1694,7 @@ function drawFullScreenShadowBanner() {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  const fontSize = screenMode === 'PORTRAIT' ? 42 : 54;
+  const fontSize = screenMode === 'PORTRAIT' ? 40 : 52;
   ctx.font = `900 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
   ctx.shadowColor = 'rgba(0, 0, 0, 0.98)';
   ctx.shadowBlur = 26;
@@ -1609,22 +1719,26 @@ function triggerGameOver() {
   overlayTitle.textContent = 'Run Ended';
   overlayDesc.innerHTML = `Skill Score: <strong style="color:#fbbf24;">${skillScore}</strong> &bull; Hazard Tiers Unlocked: <strong>${highestTierUnlocked} / ${UNLOCK_TIERS.length}</strong>`;
   startBtn.textContent = 'RUN AGAIN';
+  restartFromPauseBtn.classList.add('hidden');
   overlay.classList.remove('hidden');
 }
 
 function resetGame() {
+  syncViewportDimensions();
   wolf.reset();
   skillScore = 0;
   streak = 0;
   multiplier = 1;
   highestTierUnlocked = 0;
-  gameSpeed = screenMode === 'PORTRAIT' ? 390 : 430;
+  gameSpeed = screenMode === 'PORTRAIT' ? 380 : 430;
   obstacles = [];
   foods = [];
   particles = [];
   spawnObsTimer = 1.0;
   spawnFoodTimer = 1.8;
   screenBanner.active = false;
+  restartFromPauseBtn.classList.add('hidden');
+  lastTime = performance.now();
   gameState = 'PLAYING';
   updateHUD();
 }
@@ -1634,7 +1748,7 @@ function gameLoop(timestamp) {
   lastTime = timestamp;
 
   ctx.save();
-  if (screenShake > 0) {
+  if (screenShake > 0 && gameState === 'PLAYING') {
     ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
     screenShake = Math.max(0, screenShake - dt * 30);
   }
@@ -1652,9 +1766,11 @@ function gameLoop(timestamp) {
 
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-    p.life -= dt * 2.3;
+    if (gameState === 'PLAYING') {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.life -= dt * 2.3;
+    }
     if (p.life <= 0) {
       particles.splice(i, 1);
       continue;
@@ -1700,6 +1816,12 @@ btnDown.addEventListener('pointerleave', releaseDown);
 btnDown.addEventListener('pointercancel', releaseDown);
 
 window.addEventListener('keydown', e => {
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    e.preventDefault();
+    if (gameState === 'PLAYING') pauseGame('Game Paused');
+    else if (gameState === 'PAUSED') resumeGame();
+    return;
+  }
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
     e.preventDefault();
     btnUp.classList.add('pressed');
@@ -1721,6 +1843,15 @@ window.addEventListener('keyup', e => {
 });
 
 startBtn.addEventListener('click', () => {
+  if (gameState === 'PAUSED') {
+    resumeGame();
+  } else {
+    overlay.classList.add('hidden');
+    resetGame();
+  }
+});
+
+restartFromPauseBtn.addEventListener('click', () => {
   overlay.classList.add('hidden');
   resetGame();
 });
