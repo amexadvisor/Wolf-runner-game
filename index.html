@@ -17,7 +17,7 @@
       touch-action: none;
     }
     body {
-      background-color: #050709;
+      background-color: #040608;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -95,6 +95,16 @@
       background: rgba(248, 113, 113, 0.65);
       z-index: -1;
       transition: width 0.45s ease-out;
+    }
+    .tier-badge {
+      font-size: 11px;
+      color: #a8a29e;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      text-shadow: 0 2px 4px #000;
+    }
+    .tier-badge span {
+      color: #fbbf24;
     }
     .score-panel {
       text-align: right;
@@ -174,7 +184,7 @@
     #overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle, rgba(14, 20, 28, 0.82) 0%, rgba(5, 7, 10, 0.96) 100%);
+      background: radial-gradient(circle, rgba(14, 20, 28, 0.84) 0%, rgba(5, 7, 10, 0.96) 100%);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -195,7 +205,7 @@
     #overlay p {
       font-size: 15px;
       color: #cbd5e1;
-      max-width: 560px;
+      max-width: 600px;
       line-height: 1.65;
       margin-bottom: 26px;
     }
@@ -235,11 +245,12 @@
         <div id="hpTrail"></div>
         <div id="hpFill"></div>
       </div>
+      <div class="tier-badge" id="unlockDisplay">NEXT HAZARD AT SCORE: <span>6</span></div>
     </div>
 
     <div class="score-panel">
       <div class="score-main">SKILL SCORE: <span id="scoreDisplay">0</span></div>
-      <div class="score-sub" id="streakDisplay">STREAK MULTIPLIER: x1</div>
+      <div class="score-sub" id="streakDisplay">STREAK MULTIPLIER: x1 (0 CLEAN)</div>
     </div>
   </div>
 
@@ -258,9 +269,9 @@
   <div id="overlay">
     <h1 id="overlayTitle">Timber Wolf: Wild Run</h1>
     <p id="overlayDesc">
-      Use the <strong>UP</strong> button (or <strong>W / Up Arrow / Space</strong>) to Leap &amp; Double-Leap over boulders and bear traps.<br>
-      Hold the <strong>DOWN</strong> button (or <strong>S / Down Arrow</strong>) to Crouch-Slide under hollow logs, duck swooping eagles, or dive mid-air.<br>
-      <strong>Skill Scoring:</strong> Earn low-number points exclusively from clean evades (+1), razor-close dodges (+2), and hunting meat (+3).
+      Use <strong>UP</strong> (or <strong>W / Up Arrow / Space</strong>) to Leap &amp; Double-Leap.<br>
+      Hold <strong>DOWN</strong> (or <strong>S / Down Arrow</strong>) to Crouch-Slide under logs, duck eagles, or fast-dive.<br>
+      <strong>Progressive Wilderness:</strong> Higher Skill Scores unlock deadlier obstacles (Hollow Logs, Swooping Eagles, Thorn Brambles, Charging Boars &amp; Rolling Logs).
     </p>
     <button id="startBtn">BEGIN THE RUN</button>
   </div>
@@ -275,6 +286,7 @@ const hpTrail = document.getElementById('hpTrail');
 const hpText = document.getElementById('hpText');
 const scoreDisplay = document.getElementById('scoreDisplay');
 const streakDisplay = document.getElementById('streakDisplay');
+const unlockDisplay = document.getElementById('unlockDisplay');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlayTitle');
 const overlayDesc = document.getElementById('overlayDesc');
@@ -286,13 +298,41 @@ const GROUND_Y = 425;
 let gameState = 'MENU';
 let lastTime = 0;
 
-// Low-number skill-based scoring
+// Skill-based low-number scoring & streak progression
 let skillScore = 0;
 let streak = 0;
 let multiplier = 1;
 let gameSpeed = 430;
 let screenShake = 0;
-let damageVignette = 0;
+let highestTierUnlocked = 0;
+
+// Progressive Unlock Tiers based on Skill Score
+const UNLOCK_TIERS = [
+  { score: 6,  name: 'HOLLOW LOGS UNLOCKED', sub: 'CROUCH TO SLIDE UNDERNEATH' },
+  { score: 15, name: 'HUNTING EAGLES UNLOCKED', sub: 'AERIAL PREDATORS INBOUND' },
+  { score: 28, name: 'THORN BRAMBLES UNLOCKED', sub: 'WIDE RAZOR BUSHES ON TRAIL' },
+  { score: 45, name: 'WILD BOARS UNLOCKED', sub: 'FAST-CHARGING TUSKED BEASTS' },
+  { score: 65, name: 'ROLLING TIMBER UNLOCKED', sub: 'BOUNCING LOG AVALANCHES' }
+];
+
+// Full-Screen Shadow Banner State (For Streak Gain / Streak Lost / New Obstacle Unlocks)
+const screenBanner = {
+  active: false,
+  title: '',
+  subtitle: '',
+  theme: 'GOLD', // 'GOLD', 'CRIMSON', 'AMBER'
+  timer: 0,
+  duration: 1.55
+};
+
+function triggerFullScreenShadowText(title, subtitle, theme = 'GOLD', duration = 1.55) {
+  screenBanner.active = true;
+  screenBanner.title = title;
+  screenBanner.subtitle = subtitle;
+  screenBanner.theme = theme;
+  screenBanner.duration = duration;
+  screenBanner.timer = duration;
+}
 
 let obstacles = [];
 let foods = [];
@@ -302,15 +342,50 @@ let spawnObsTimer = 0;
 let spawnFoodTimer = 0;
 
 function addPopup(x, y, text, color = '#fbbf24', size = 17) {
-  popups.push({ x, y, text, color, size, life: 1.05, vy: -48 });
+  popups.push({ x, y, text, color, size, life: 1.0, vy: -46 });
+}
+
+function checkTierUnlocks() {
+  for (let i = highestTierUnlocked; i < UNLOCK_TIERS.length; i++) {
+    if (skillScore >= UNLOCK_TIERS[i].score) {
+      highestTierUnlocked = i + 1;
+      triggerFullScreenShadowText(
+        UNLOCK_TIERS[i].name,
+        UNLOCK_TIERS[i].sub,
+        'AMBER',
+        1.75
+      );
+    }
+  }
 }
 
 function addSkillPoints(basePts, label, x, y, color = '#fbbf24') {
+  const prevMultiplier = multiplier;
   streak++;
-  multiplier = Math.min(3, 1 + Math.floor(streak / 5));
+  multiplier = Math.min(4, 1 + Math.floor(streak / 4));
   const pts = basePts * multiplier;
   skillScore += pts;
+
   addPopup(x, y, `+${pts} ${label}`, color, 17);
+
+  // Full-screen shadow notification when streak multiplier increases or hits milestones
+  if (multiplier > prevMultiplier) {
+    triggerFullScreenShadowText(
+      `STREAK x${multiplier}`,
+      `${streak} CLEAN EVADES IN A ROW`,
+      'GOLD',
+      1.45
+    );
+  } else if (streak > 0 && streak % 4 === 0 && multiplier === 4) {
+    triggerFullScreenShadowText(
+      `UNSTOPPABLE x4`,
+      `${streak} FLAWLESS STREAK`,
+      'GOLD',
+      1.35
+    );
+  }
+
+  checkTierUnlocks();
   updateHUD();
 }
 
@@ -328,13 +403,15 @@ function createParticles(x, y, color, count = 12, speed = 220) {
   }
 }
 
-// Hyper-Realistic Articulated Timber Wolf
+// ======================================================
+// HYPER-REALISTIC 4-LEGGED TIMBER WOLF (Clearly Distinct 4 Legs)
+// ======================================================
 const wolf = {
   x: 145,
   y: GROUND_Y,
   vy: 0,
   gravity: 2200,
-  jumpForce: -755,
+  jumpForce: -760,
   jumpsLeft: 2,
   hp: 100,
   maxHp: 100,
@@ -359,7 +436,6 @@ const wolf = {
       this.vy = this.jumpForce * (this.jumpsLeft === 1 ? 0.88 : 1);
       this.jumpsLeft--;
       this.crouching = false;
-      // Natural soil & leaf kick-up (Zero blue effects)
       createParticles(this.x + 25, this.y, '#78716c', 12, 200);
       createParticles(this.x + 20, this.y, '#a8a29e', 6, 150);
     }
@@ -369,7 +445,7 @@ const wolf = {
     if (gameState !== 'PLAYING') return;
     this.crouching = active;
     if (active && this.y < GROUND_Y) {
-      this.vy = Math.max(this.vy, 760); // Fast-fall dive
+      this.vy = Math.max(this.vy, 780);
     }
   },
 
@@ -377,11 +453,28 @@ const wolf = {
     if (this.invincibleTimer > 0) return;
     this.hp = Math.max(0, this.hp - amount);
     this.invincibleTimer = 1.15;
+
+    // Notify streak loss with dramatic Full-Screen Crimson Shadow Text
+    if (streak >= 2 || multiplier > 1) {
+      triggerFullScreenShadowText(
+        'STREAK BROKEN',
+        `LOST ${streak}x CLEAN STREAK`,
+        'CRIMSON',
+        1.5
+      );
+    } else {
+      triggerFullScreenShadowText(
+        'WOUNDED',
+        `-${amount}% WOLF VITALITY`,
+        'CRIMSON',
+        1.15
+      );
+    }
+
     streak = 0;
     multiplier = 1;
-    screenShake = 12;
-    damageVignette = 0.42;
-    createParticles(this.x + 42, this.y - 26, '#991b1b', 22, 260);
+    screenShake = 14;
+    createParticles(this.x + 42, this.y - 26, '#991b1b', 24, 260);
     addPopup(this.x + 20, this.y - 55, `-${amount} HP`, '#ef4444', 20);
     updateHUD();
 
@@ -413,60 +506,96 @@ const wolf = {
       this.y = GROUND_Y;
       this.vy = 0;
       this.jumpsLeft = 2;
-      this.runCycle += dt * (gameSpeed * 0.033);
+      this.runCycle += dt * (gameSpeed * 0.035);
 
-      // Subtle forest floor dust while sprinting
-      if (Math.random() < 0.35) {
+      if (Math.random() < 0.38) {
         createParticles(this.x + 12, GROUND_Y, 'rgba(120, 113, 108, 0.55)', 1, 90);
       }
     } else {
-      this.runCycle += dt * 3.8;
+      this.runCycle += dt * 4.0;
     }
   },
 
-  drawArticulatedLeg(hipX, hipY, phaseOffset, isFront, upperColor, lowerColor, pawColor) {
+  // Draws an anatomically distinct 3-segment canine leg (Thigh/Humerus -> Shin/Radius -> Hock/Pasurn -> Paw)
+  drawCanineLimb({ hipX, hipY, phase, isFront, isFarSide }) {
     const isAirborne = this.y < GROUND_Y;
-    const stride = isAirborne
-      ? (isFront ? -0.58 : 0.62)
-      : Math.sin(this.runCycle + phaseOffset) * 0.68;
-    const jointBend = isAirborne
-      ? 0.4
-      : (Math.cos(this.runCycle + phaseOffset) * 0.42 + 0.48);
 
-    const upperLen = this.crouching ? 11 : 16;
-    const lowerLen = this.crouching ? 11 : 15;
+    // Wide, distinct stride angles so all 4 legs fan out clearly
+    let swingAngle;
+    let kneeFlex;
+    if (isAirborne) {
+      // Offset far and near legs even in mid-air so you always see all 4 legs!
+      const airSpread = isFarSide ? 0.28 : 0.0;
+      swingAngle = isFront ? (-0.65 + airSpread) : (0.58 - airSpread);
+      kneeFlex = isFarSide ? 0.55 : 0.32;
+    } else {
+      swingAngle = Math.sin(this.runCycle + phase) * 0.78;
+      kneeFlex = Math.cos(this.runCycle + phase) * 0.48 + 0.52;
+    }
 
-    const kneeX = hipX + Math.sin(stride) * upperLen;
-    const kneeY = hipY + Math.cos(stride) * upperLen;
+    const upperLen = this.crouching ? 11.5 : 16.5;
+    const lowerLen = this.crouching ? 11.5 : 16.5;
 
-    const ankleAngle = isFront ? stride + jointBend * 0.72 : stride - jointBend * 0.72;
-    const pawX = kneeX + Math.sin(ankleAngle) * lowerLen;
-    const pawY = kneeY + Math.cos(ankleAngle) * lowerLen;
+    const kneeX = hipX + Math.sin(swingAngle) * upperLen;
+    const kneeY = hipY + Math.cos(swingAngle) * upperLen;
 
+    const shinAngle = isFront
+      ? swingAngle + kneeFlex * 0.75
+      : swingAngle - kneeFlex * 0.75;
+
+    const pawX = kneeX + Math.sin(shinAngle) * lowerLen;
+    const pawY = kneeY + Math.cos(shinAngle) * lowerLen;
+
+    ctx.save();
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Muscular Thigh / Shoulder
-    ctx.strokeStyle = upperColor;
-    ctx.lineWidth = 8.5;
+    // Distinct colors & rim-highlights so Far Legs vs Near Legs never blend together
+    const thighColor = isFarSide ? '#24201d' : '#57534e';
+    const shinColor  = isFarSide ? '#38322e' : '#a8a29e';
+    const pawColor   = isFarSide ? '#1c1917' : '#d6d3d1';
+    const rimHighlight = isFarSide ? 'rgba(168, 162, 158, 0.35)' : 'rgba(255, 255, 255, 0.25)';
+
+    // Upper Limb (Thigh / Shoulder)
+    ctx.strokeStyle = thighColor;
+    ctx.lineWidth = isFarSide ? 8.5 : 9.5;
     ctx.beginPath();
     ctx.moveTo(hipX, hipY);
     ctx.lineTo(kneeX, kneeY);
     ctx.stroke();
 
-    // Lower Shin / Foreleg
-    ctx.strokeStyle = lowerColor;
-    ctx.lineWidth = 5.5;
+    // Lower Limb (Shin / Forearm)
+    ctx.strokeStyle = shinColor;
+    ctx.lineWidth = isFarSide ? 5.8 : 6.2;
     ctx.beginPath();
     ctx.moveTo(kneeX, kneeY);
     ctx.lineTo(pawX, pawY);
     ctx.stroke();
 
-    // Paw & Claws
+    // Rim-light edge along the front of the leg so it pops visually against the dark forest
+    ctx.strokeStyle = rimHighlight;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(hipX + 2, hipY);
+    ctx.lineTo(kneeX + 2, kneeY);
+    ctx.lineTo(pawX + 2, pawY);
+    ctx.stroke();
+
+    // Articulated Wolf Paw & Claws
     ctx.fillStyle = pawColor;
     ctx.beginPath();
-    ctx.ellipse(pawX + 3.5, pawY, 5, 2.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(pawX + 3.8, pawY, 5.5, 2.8, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // Claws
+    ctx.fillStyle = '#090a0f';
+    ctx.beginPath();
+    ctx.moveTo(pawX + 8, pawY - 1);
+    ctx.lineTo(pawX + 11.5, pawY + 1);
+    ctx.lineTo(pawX + 8, pawY + 2);
+    ctx.fill();
+
+    ctx.restore();
   },
 
   draw() {
@@ -484,17 +613,21 @@ const wolf = {
 
     // Realistic Soft Ground Shadow
     const shadowScale = Math.max(0.25, 1 - (GROUND_Y - this.y) / 270);
-    ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * shadowScale})`;
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.58 * shadowScale})`;
     ctx.beginPath();
-    ctx.ellipse(45, 2, 46 * shadowScale, 6.5 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.ellipse(46, 2, 48 * shadowScale, 6.5 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.translate(0, -bounce + crouchDrop);
     ctx.rotate(pitchAngle);
 
-    // Far-side Legs (Shadowed)
-    this.drawArticulatedLeg(16, -26, Math.PI, false, '#1c1917', '#141210', '#0c0a09');
-    this.drawArticulatedLeg(60, -26, 0, true, '#1c1917', '#141210', '#0c0a09');
+    // =========================================================
+    // 1. FAR-SIDE LEGS (Drawn behind torso with distinct horizontal offset & rotary-gallop phases)
+    // =========================================================
+    // Far Hind Leg (shifted forward to x=25, phase = 2.5 rad)
+    this.drawCanineLimb({ hipX: 25, hipY: -24, phase: 2.5, isFront: false, isFarSide: true });
+    // Far Foreleg (shifted forward to x=68, phase = 5.4 rad)
+    this.drawCanineLimb({ hipX: 68, hipY: -24, phase: 5.4, isFront: true, isFarSide: true });
 
     // Bushy Timber Wolf Tail
     const tailWave = Math.sin(this.runCycle) * 5;
@@ -512,18 +645,18 @@ const wolf = {
 
     // Main Wolf Torso & Muscular Ribcage
     const coatGrad = ctx.createLinearGradient(0, -46, 0, -14);
-    coatGrad.addColorStop(0, '#1c1917');    // Dark charcoal dorsal guard hairs
-    coatGrad.addColorStop(0.48, '#57534e'); // Warm grey-brown flank
-    coatGrad.addColorStop(0.82, '#a8a29e'); // Tawny buff transition
-    coatGrad.addColorStop(1, '#e7e5e4');    // Cream underbelly
+    coatGrad.addColorStop(0, '#1c1917');
+    coatGrad.addColorStop(0.48, '#57534e');
+    coatGrad.addColorStop(0.82, '#a8a29e');
+    coatGrad.addColorStop(1, '#e7e5e4');
 
     ctx.fillStyle = coatGrad;
     ctx.beginPath();
-    ctx.moveTo(10, -29); // Haunches
-    ctx.quadraticCurveTo(32, -40, 56, -43); // Spine to shoulder hump
-    ctx.lineTo(72, -33); // Muscular neck base
-    ctx.quadraticCurveTo(68, -15, 50, -16); // Deep chest
-    ctx.quadraticCurveTo(30, -21, 14, -19); // Tucked abdomen
+    ctx.moveTo(10, -29);
+    ctx.quadraticCurveTo(32, -40, 56, -43);
+    ctx.lineTo(72, -33);
+    ctx.quadraticCurveTo(68, -15, 50, -16);
+    ctx.quadraticCurveTo(30, -21, 14, -19);
     ctx.closePath();
     ctx.fill();
 
@@ -539,9 +672,13 @@ const wolf = {
     ctx.closePath();
     ctx.fill();
 
-    // Near-side Legs
-    this.drawArticulatedLeg(19, -25, 0.25, false, '#44403c', '#78716c', '#a8a29e');
-    this.drawArticulatedLeg(62, -25, Math.PI + 0.25, true, '#44403c', '#78716c', '#a8a29e');
+    // =========================================================
+    // 2. NEAR-SIDE LEGS (Drawn in front of torso with lighter fur & rotary-gallop phases)
+    // =========================================================
+    // Near Hind Leg (hipX = 16, phase = 0.0 rad)
+    this.drawCanineLimb({ hipX: 16, hipY: -25, phase: 0.0, isFront: false, isFarSide: false });
+    // Near Foreleg (hipX = 58, phase = 3.1 rad)
+    this.drawCanineLimb({ hipX: 58, hipY: -25, phase: 3.1, isFront: true, isFarSide: false });
 
     // Back Ear
     ctx.fillStyle = '#292524';
@@ -560,10 +697,10 @@ const wolf = {
     ctx.fillStyle = headGrad;
     ctx.beginPath();
     ctx.moveTo(58, -37);
-    ctx.lineTo(66, -51); // Brow
-    ctx.lineTo(78, -48); // Stop
-    ctx.lineTo(94, -43); // Nasal bridge
-    ctx.lineTo(91, -36); // Upper muzzle
+    ctx.lineTo(66, -51);
+    ctx.lineTo(78, -48);
+    ctx.lineTo(94, -43);
+    ctx.lineTo(91, -36);
     ctx.lineTo(76, -35);
     ctx.lineTo(65, -28);
     ctx.closePath();
@@ -615,7 +752,6 @@ const wolf = {
   },
 
   getHitbox() {
-    // Crouching lowers the wolf's top hitbox by 18px so it slides cleanly under high logs & eagles
     const crouchOffset = this.crouching ? 18 : 0;
     return {
       x: this.x + 16,
@@ -664,32 +800,53 @@ const fireflies = Array.from({ length: 18 }, () => ({
   speed: 0.4 + Math.random() * 0.5
 }));
 
+// ======================================================
+// SCORE-PROGRESSION OBSTACLE SPAWNER (Unlocks New Types as Score Rises)
+// ======================================================
 function spawnObstacle() {
-  const roll = Math.random();
-  if (roll < 0.26) {
-    // Steel Bear Trap (Low on ground — must leap)
+  const pool = ['TRAP', 'BOULDER'];
+  if (skillScore >= 6)  pool.push('OVERHANG_LOG', 'OVERHANG_LOG');
+  if (skillScore >= 15) pool.push('EAGLE', 'EAGLE');
+  if (skillScore >= 28) pool.push('BRAMBLE', 'BRAMBLE');
+  if (skillScore >= 45) pool.push('BOAR', 'BOAR');
+  if (skillScore >= 65) pool.push('ROLLING_LOG', 'ROLLING_LOG');
+
+  const choice = pool[Math.floor(Math.random() * pool.length)];
+
+  if (choice === 'TRAP') {
     obstacles.push({
       type: 'TRAP',
       x: canvas.width + 70,
       y: GROUND_Y,
       width: 48,
       height: 18,
-      damage: 25,
+      damage: 24,
+      speedMult: 1,
       passed: false
     });
-  } else if (roll < 0.52) {
-    // Fallen Hollow Timber Log (Suspended at head height — crouch-slide under OR double-jump over!)
+  } else if (choice === 'BOULDER') {
+    obstacles.push({
+      type: 'BOULDER',
+      x: canvas.width + 70,
+      y: GROUND_Y,
+      width: 60,
+      height: 50,
+      damage: 26,
+      speedMult: 1,
+      passed: false
+    });
+  } else if (choice === 'OVERHANG_LOG') {
     obstacles.push({
       type: 'OVERHANG_LOG',
       x: canvas.width + 70,
-      y: GROUND_Y - 32, // Bottom of log is 32px above ground; standing wolf is 46px tall, crouching wolf is 28px tall!
-      width: 78,
+      y: GROUND_Y - 32,
+      width: 80,
       height: 34,
       damage: 24,
+      speedMult: 1,
       passed: false
     });
-  } else if (roll < 0.78) {
-    // Swooping Bald Eagle (Flies at head level or mid-air)
+  } else if (choice === 'EAGLE') {
     const lowSwoop = Math.random() > 0.42;
     obstacles.push({
       type: 'EAGLE',
@@ -698,18 +855,48 @@ function spawnObstacle() {
       width: 68,
       height: 34,
       damage: 26,
+      speedMult: 1.25,
       wingPhase: Math.random() * Math.PI * 2,
       passed: false
     });
-  } else {
-    // Jagged Moss-Covered Granite Boulder
+  } else if (choice === 'BRAMBLE') {
+    // Wide Razor Thorn Thicket (Requires well-timed high jump or double jump)
     obstacles.push({
-      type: 'BOULDER',
+      type: 'BRAMBLE',
       x: canvas.width + 70,
       y: GROUND_Y,
-      width: 60,
-      height: 50,
+      width: 96,
+      height: 36,
       damage: 28,
+      speedMult: 1,
+      passed: false
+    });
+  } else if (choice === 'BOAR') {
+    // Fast-Charging Wild Tusked Boar
+    obstacles.push({
+      type: 'BOAR',
+      x: canvas.width + 70,
+      y: GROUND_Y,
+      width: 68,
+      height: 40,
+      damage: 32,
+      speedMult: 1.38,
+      legPhase: 0,
+      passed: false
+    });
+  } else if (choice === 'ROLLING_LOG') {
+    // Bouncing & Spinning Timber Log Avalanche
+    obstacles.push({
+      type: 'ROLLING_LOG',
+      x: canvas.width + 70,
+      y: GROUND_Y,
+      baseY: GROUND_Y,
+      width: 48,
+      height: 48,
+      damage: 34,
+      speedMult: 1.32,
+      rot: 0,
+      bouncePhase: Math.random() * Math.PI,
       passed: false
     });
   }
@@ -742,11 +929,25 @@ function updateHUD() {
   hpText.textContent = `${pct}%`;
   scoreDisplay.textContent = skillScore;
   streakDisplay.textContent = `STREAK MULTIPLIER: x${multiplier} (${streak} CLEAN)`;
+
+  if (highestTierUnlocked < UNLOCK_TIERS.length) {
+    const next = UNLOCK_TIERS[highestTierUnlocked];
+    unlockDisplay.innerHTML = `NEXT HAZARD (${next.name.split(' ')[0]}): <span>SCORE ${next.score}</span>`;
+  } else {
+    unlockDisplay.innerHTML = `ALL WILDERNESS HAZARDS <span>ACTIVE</span>`;
+  }
 }
 
 function updateGame(dt) {
   wolf.update(dt);
-  gameSpeed = Math.min(720, gameSpeed + dt * 5.5);
+  gameSpeed = Math.min(730, gameSpeed + dt * 5.2);
+
+  if (screenBanner.active) {
+    screenBanner.timer -= dt;
+    if (screenBanner.timer <= 0) {
+      screenBanner.active = false;
+    }
+  }
 
   // Parallax updates
   mountains.forEach(m => {
@@ -775,16 +976,22 @@ function updateGame(dt) {
   spawnObsTimer -= dt;
   if (spawnObsTimer <= 0) {
     spawnObstacle();
-    spawnObsTimer = Math.max(0.65, 1.45 - gameSpeed * 0.00085 + Math.random() * 0.55);
+    spawnObsTimer = Math.max(0.64, 1.44 - gameSpeed * 0.00085 + Math.random() * 0.55);
   }
 
   const wolfBox = wolf.getHitbox();
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
-    const speedMult = obs.type === 'EAGLE' ? 1.26 : 1;
-    obs.x -= gameSpeed * speedMult * dt;
+    obs.x -= gameSpeed * (obs.speedMult || 1) * dt;
+
     if (obs.type === 'EAGLE') obs.wingPhase += dt * 11;
+    if (obs.type === 'BOAR') obs.legPhase += dt * 18;
+    if (obs.type === 'ROLLING_LOG') {
+      obs.rot -= dt * 9;
+      obs.bouncePhase += dt * 7;
+      obs.y = obs.baseY - Math.abs(Math.sin(obs.bouncePhase)) * 34;
+    }
 
     const obsBox = {
       x: obs.x + 6,
@@ -799,7 +1006,6 @@ function updateGame(dt) {
       continue;
     }
 
-    // Skill-Based Scoring: Evaluate how closely & cleanly the player cleared the obstacle
     if (!obs.passed && obs.x + obs.width < wolf.x) {
       obs.passed = true;
       const crouchDuckBonus = (obs.type === 'OVERHANG_LOG' || obs.type === 'EAGLE') && wolf.crouching;
@@ -814,7 +1020,7 @@ function updateGame(dt) {
       }
     }
 
-    if (obs.x + obs.width < -90) {
+    if (obs.x + obs.width < -100) {
       obstacles.splice(i, 1);
     }
   }
@@ -844,7 +1050,9 @@ function updateGame(dt) {
   }
 }
 
-// Realistic Rendering Functions
+// ======================================================
+// ENVIRONMENT & OBSTACLE RENDERERS
+// ======================================================
 function drawPineSilhouette(x, bottomY, w, h, color) {
   ctx.fillStyle = color;
   for (let tier = 0; tier < 3; tier++) {
@@ -861,7 +1069,6 @@ function drawPineSilhouette(x, bottomY, w, h, color) {
 }
 
 function drawEnvironment() {
-  // Deep Realistic Night Sky
   const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
   skyGrad.addColorStop(0, '#04060a');
   skyGrad.addColorStop(0.55, '#0b131e');
@@ -869,7 +1076,6 @@ function drawEnvironment() {
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, canvas.width, GROUND_Y);
 
-  // Stars
   stars.forEach(s => {
     ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
     ctx.beginPath();
@@ -877,7 +1083,7 @@ function drawEnvironment() {
     ctx.fill();
   });
 
-  // Detailed Cratered Full Moon & Atmospheric Glow
+  // Full Moon
   const moonX = 810, moonY = 88;
   const moonHalo = ctx.createRadialGradient(moonX, moonY, 32, moonX, moonY, 130);
   moonHalo.addColorStop(0, 'rgba(254, 249, 195, 0.28)');
@@ -899,7 +1105,6 @@ function drawEnvironment() {
   ctx.arc(moonX + 5, moonY - 17, 5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Distant Mountain Range
   mountains.forEach(m => {
     ctx.fillStyle = '#0c1520';
     ctx.beginPath();
@@ -909,7 +1114,6 @@ function drawEnvironment() {
     ctx.closePath();
     ctx.fill();
 
-    // Subtle Moonlit Snow Ridge
     ctx.fillStyle = 'rgba(226, 232, 240, 0.09)';
     ctx.beginPath();
     ctx.moveTo(m.x + m.w * 0.48, GROUND_Y - m.h);
@@ -919,20 +1123,16 @@ function drawEnvironment() {
     ctx.fill();
   });
 
-  // Far Forest Layer
   farTrees.forEach(t => drawPineSilhouette(t.x, GROUND_Y, t.w, t.h, '#091119'));
 
-  // Low Woodland Fog
   const fogGrad = ctx.createLinearGradient(0, GROUND_Y - 70, 0, GROUND_Y);
   fogGrad.addColorStop(0, 'rgba(22, 36, 50, 0)');
   fogGrad.addColorStop(1, 'rgba(148, 163, 184, 0.12)');
   ctx.fillStyle = fogGrad;
   ctx.fillRect(0, GROUND_Y - 70, canvas.width, 70);
 
-  // Midground Forest Layer
   midTrees.forEach(t => drawPineSilhouette(t.x, GROUND_Y, t.w, t.h, '#050a0f'));
 
-  // Golden Fireflies / Forest Spores
   fireflies.forEach(f => {
     const glowAlpha = (Math.sin(f.phase) + 1) * 0.35;
     ctx.fillStyle = `rgba(253, 224, 71, ${glowAlpha})`;
@@ -941,7 +1141,6 @@ function drawEnvironment() {
     ctx.fill();
   });
 
-  // Rich Earth & Pine-Needle Ground
   const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, canvas.height);
   groundGrad.addColorStop(0, '#1a241e');
   groundGrad.addColorStop(0.2, '#121814');
@@ -969,7 +1168,6 @@ function drawObstacle(obs) {
   ctx.translate(obs.x, obs.y);
 
   if (obs.type === 'TRAP') {
-    // Rusted Iron Bear Trap with Steel Teeth
     ctx.fillStyle = '#3f3f46';
     ctx.fillRect(0, -6, obs.width, 6);
     ctx.fillStyle = '#d4d4d8';
@@ -985,7 +1183,6 @@ function drawObstacle(obs) {
     ctx.arc(obs.width / 2, -6, 5, 0, Math.PI * 2);
     ctx.fill();
   } else if (obs.type === 'OVERHANG_LOG') {
-    // Suspended Fallen Tree Trunk (Supported by broken branches so wolf can crouch-slide underneath)
     ctx.fillStyle = '#291d12';
     ctx.fillRect(8, -4, 7, 36);
     ctx.fillRect(obs.width - 15, -4, 7, 36);
@@ -999,19 +1196,16 @@ function drawObstacle(obs) {
     ctx.roundRect(0, -obs.height, obs.width, obs.height, 8);
     ctx.fill();
 
-    // Moss along top of log
     ctx.fillStyle = '#365314';
     ctx.beginPath();
     ctx.roundRect(6, -obs.height, obs.width - 12, 7, 4);
     ctx.fill();
 
-    // Cut wood rings on end
     ctx.fillStyle = '#a16207';
     ctx.beginPath();
     ctx.ellipse(4, -obs.height / 2, 4, obs.height / 2 - 2, 0, 0, Math.PI * 2);
     ctx.fill();
   } else if (obs.type === 'BOULDER') {
-    // Faceted Granite Boulder with Forest Moss
     ctx.fillStyle = '#334155';
     ctx.beginPath();
     ctx.moveTo(0, 0);
@@ -1037,12 +1231,10 @@ function drawObstacle(obs) {
     ctx.ellipse(obs.width * 0.45, -obs.height * 0.88, 16, 5, 0.1, 0, Math.PI * 2);
     ctx.fill();
   } else if (obs.type === 'EAGLE') {
-    // Realistic Hunting Bald Eagle
     const flap = Math.sin(obs.wingPhase);
     const centerY = -obs.height / 2 + flap * 4;
     ctx.translate(obs.width / 2, centerY);
 
-    // Far Wing
     ctx.fillStyle = '#29180e';
     ctx.beginPath();
     ctx.moveTo(-4, -2);
@@ -1051,7 +1243,6 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
 
-    // White Tail Feathers
     ctx.fillStyle = '#f8fafc';
     ctx.beginPath();
     ctx.moveTo(16, -3);
@@ -1062,13 +1253,11 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
 
-    // Dark Plumage Body
     ctx.fillStyle = '#3d2516';
     ctx.beginPath();
     ctx.ellipse(2, 1, 20, 8.5, -0.06, 0, Math.PI * 2);
     ctx.fill();
 
-    // Yellow Talons
     ctx.strokeStyle = '#eab308';
     ctx.lineWidth = 2.2;
     ctx.beginPath();
@@ -1076,13 +1265,11 @@ function drawObstacle(obs) {
     ctx.moveTo(3, 8);  ctx.lineTo(-3, 14);
     ctx.stroke();
 
-    // White Feathered Head
     ctx.fillStyle = '#f8fafc';
     ctx.beginPath();
     ctx.arc(-17, 0, 7.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hooked Golden Raptor Beak
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
     ctx.moveTo(-23, -3);
@@ -1091,7 +1278,6 @@ function drawObstacle(obs) {
     ctx.closePath();
     ctx.fill();
 
-    // Near Wing with Primary Feathers
     const wingY = 26 * flap;
     ctx.fillStyle = '#52321d';
     ctx.beginPath();
@@ -1103,6 +1289,98 @@ function drawObstacle(obs) {
     ctx.lineTo(8, 4);
     ctx.closePath();
     ctx.fill();
+  } else if (obs.type === 'BRAMBLE') {
+    // Tangled Razor Thorn Bush (Unlocked at Score 28)
+    ctx.fillStyle = '#1e2918';
+    ctx.beginPath();
+    ctx.arc(24, -14, 18, 0, Math.PI * 2);
+    ctx.arc(48, -18, 22, 0, Math.PI * 2);
+    ctx.arc(74, -14, 17, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Gnarled Vine Branches & Sharp Crimson-Tipped Thorns
+    ctx.strokeStyle = '#3f2e21';
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.moveTo(4, 0);
+    ctx.quadraticCurveTo(28, -36, 52, -12);
+    ctx.quadraticCurveTo(72, -34, 92, 0);
+    ctx.stroke();
+
+    ctx.fillStyle = '#d6d3d1';
+    for (let tx = 10; tx < obs.width - 8; tx += 12) {
+      const ty = -14 - (tx % 24 === 0 ? 14 : 6);
+      ctx.beginPath();
+      ctx.moveTo(tx - 3, ty);
+      ctx.lineTo(tx, ty - 11);
+      ctx.lineTo(tx + 3, ty);
+      ctx.fill();
+    }
+  } else if (obs.type === 'BOAR') {
+    // Charging Wild Razorback Boar (Unlocked at Score 45)
+    const swing = Math.sin(obs.legPhase) * 8;
+
+    // 4 Boar Trotters
+    ctx.strokeStyle = '#1c1917';
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(16, -12); ctx.lineTo(16 - swing, 0);
+    ctx.moveTo(24, -12); ctx.lineTo(24 + swing, 0);
+    ctx.moveTo(46, -12); ctx.lineTo(46 + swing, 0);
+    ctx.moveTo(54, -12); ctx.lineTo(54 - swing, 0);
+    ctx.stroke();
+
+    // Bristled Dark-Brown Hide & Humped Back
+    ctx.fillStyle = '#3b281e';
+    ctx.beginPath();
+    ctx.moveTo(64, -14);
+    ctx.quadraticCurveTo(50, -42, 22, -36); // High bristled shoulder hump
+    ctx.lineTo(4, -20); // Snout
+    ctx.lineTo(8, -12);
+    ctx.lineTo(58, -10);
+    ctx.closePath();
+    ctx.fill();
+
+    // Curved Ivory Tusks
+    ctx.fillStyle = '#fef3c7';
+    ctx.beginPath();
+    ctx.moveTo(8, -16);
+    ctx.quadraticCurveTo(-2, -26, 4, -31);
+    ctx.lineTo(11, -18);
+    ctx.fill();
+
+    // Glowing Red Boar Eye
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(16, -24, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (obs.type === 'ROLLING_LOG') {
+    // Spinning Timber Log Avalanche (Unlocked at Score 65)
+    const r = obs.width / 2;
+    ctx.translate(r, -r);
+    ctx.rotate(obs.rot);
+
+    // Bark Outer Ring
+    ctx.fillStyle = '#3d2817';
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Heartwood & Annual Growth Rings
+    ctx.fillStyle = '#b45309';
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = '#78350f';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, r - 11, 0, Math.PI * 2);
+    ctx.arc(0, 0, r - 17, 0, Math.PI * 2);
+    ctx.moveTo(-r + 5, 0); ctx.lineTo(r - 5, 0);
+    ctx.moveTo(0, -r + 5); ctx.lineTo(0, r - 5);
+    ctx.stroke();
   }
 
   ctx.restore();
@@ -1113,7 +1391,6 @@ function drawFood(f) {
   ctx.translate(f.x, f.y);
   ctx.rotate(-0.22);
 
-  // Bone Handle
   ctx.fillStyle = '#f5f5f4';
   ctx.fillRect(-17, -2.5, 12, 5);
   ctx.beginPath();
@@ -1121,7 +1398,6 @@ function drawFood(f) {
   ctx.arc(-17, 3, 3.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // Outer Fat & Marbled Venison Steak
   ctx.fillStyle = '#fecdd3';
   ctx.beginPath();
   ctx.ellipse(2, 0, 13, 10, 0, 0, Math.PI * 2);
@@ -1141,10 +1417,88 @@ function drawFood(f) {
   ctx.restore();
 }
 
+// ======================================================
+// FULL-SCREEN SHADOW-TYPE TEXT NOTIFICATION RENDERER
+// ======================================================
+function drawFullScreenShadowBanner() {
+  if (!screenBanner.active) return;
+
+  const progress = 1 - (screenBanner.timer / screenBanner.duration);
+  // Smooth fade-in and fade-out curve
+  const alpha = progress < 0.18
+    ? progress / 0.18
+    : (progress > 0.72 ? (1 - progress) / 0.28 : 1);
+
+  const scale = 0.92 + progress * 0.14;
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+
+  // Full-Screen Atmospheric Shadow Vignette
+  const vigGrad = ctx.createRadialGradient(
+    canvas.width / 2, canvas.height / 2, 110,
+    canvas.width / 2, canvas.height / 2, 560
+  );
+  vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0.18)');
+  if (screenBanner.theme === 'CRIMSON') {
+    vigGrad.addColorStop(0.65, 'rgba(69, 10, 10, 0.55)');
+    vigGrad.addColorStop(1, 'rgba(127, 29, 29, 0.82)');
+  } else if (screenBanner.theme === 'AMBER') {
+    vigGrad.addColorStop(0.65, 'rgba(41, 24, 10, 0.52)');
+    vigGrad.addColorStop(1, 'rgba(120, 53, 15, 0.78)');
+  } else {
+    vigGrad.addColorStop(0.65, 'rgba(12, 18, 28, 0.5)');
+    vigGrad.addColorStop(1, 'rgba(3, 5, 9, 0.82)');
+  }
+  ctx.fillStyle = vigGrad;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Horizontal Shadow Band behind Typography
+  const bandGrad = ctx.createLinearGradient(0, canvas.height / 2 - 70, 0, canvas.height / 2 + 55);
+  bandGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  bandGrad.addColorStop(0.5, 'rgba(0, 0, 0, 0.68)');
+  bandGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = bandGrad;
+  ctx.fillRect(0, canvas.height / 2 - 70, canvas.width, 125);
+
+  // Center Shadow Typography
+  ctx.translate(canvas.width / 2, canvas.height / 2 - 12);
+  ctx.scale(scale, scale);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  const mainColor = screenBanner.theme === 'CRIMSON'
+    ? '#f87171'
+    : (screenBanner.theme === 'AMBER' ? '#fbbf24' : '#fef3c7');
+
+  // Deep Dramatic Multi-Layer Shadow Text
+  ctx.font = '900 58px "Segoe UI", system-ui, sans-serif';
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.98)';
+  ctx.shadowBlur = 28;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 10;
+
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.92)';
+  ctx.lineWidth = 10;
+  ctx.strokeText(screenBanner.title, 0, 0);
+
+  ctx.fillStyle = mainColor;
+  ctx.fillText(screenBanner.title, 0, 0);
+
+  // Subtitle Shadow Text
+  ctx.font = '800 16px "Segoe UI", system-ui, sans-serif';
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 5;
+  ctx.fillStyle = '#cbd5e1';
+  ctx.fillText(screenBanner.subtitle, 0, 42);
+
+  ctx.restore();
+}
+
 function triggerGameOver() {
   gameState = 'GAMEOVER';
   overlayTitle.textContent = 'The Run Has Ended';
-  overlayDesc.innerHTML = `Final Skill Score: <strong style="color:#fbbf24;">${skillScore}</strong>`;
+  overlayDesc.innerHTML = `Final Skill Score: <strong style="color:#fbbf24;">${skillScore}</strong> &bull; Hazard Tiers Unlocked: <strong>${highestTierUnlocked} / ${UNLOCK_TIERS.length}</strong>`;
   startBtn.textContent = 'RUN AGAIN';
   overlay.classList.remove('hidden');
 }
@@ -1154,6 +1508,7 @@ function resetGame() {
   skillScore = 0;
   streak = 0;
   multiplier = 1;
+  highestTierUnlocked = 0;
   gameSpeed = 430;
   obstacles = [];
   foods = [];
@@ -1161,6 +1516,7 @@ function resetGame() {
   popups = [];
   spawnObsTimer = 1.0;
   spawnFoodTimer = 1.8;
+  screenBanner.active = false;
   gameState = 'PLAYING';
   updateHUD();
 }
@@ -1223,11 +1579,8 @@ function gameLoop(timestamp) {
   }
   ctx.globalAlpha = 1;
 
-  if (damageVignette > 0) {
-    ctx.fillStyle = `rgba(185, 28, 28, ${damageVignette})`;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    damageVignette = Math.max(0, damageVignette - dt * 1.6);
-  }
+  // Render Full-Screen Shadow-Type Notification Banner
+  drawFullScreenShadowBanner();
 
   ctx.restore();
   requestAnimationFrame(gameLoop);
@@ -1259,7 +1612,6 @@ btnDown.addEventListener('pointerup', releaseDown);
 btnDown.addEventListener('pointerleave', releaseDown);
 btnDown.addEventListener('pointercancel', releaseDown);
 
-// Keyboard Support
 window.addEventListener('keydown', e => {
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
     e.preventDefault();
