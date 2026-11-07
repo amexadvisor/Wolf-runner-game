@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Alpha Wolf: Realistic Runner & 3D POV Combat</title>
+  <title>Alpha Wolf: Realistic Wilderness Runner</title>
   <style>
     * {
       box-sizing: border-box;
@@ -11,119 +11,95 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
       touch-action: none;
     }
     body {
-      background-color: #04060a;
+      background-color: #050709;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       overflow: hidden;
     }
     #gameContainer {
       position: relative;
       width: 1000px;
-      height: 540px;
+      height: 520px;
       max-width: 100vw;
       max-height: 100vh;
-      box-shadow: 0 25px 75px rgba(0, 0, 0, 0.95);
-      border-radius: 12px;
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.95);
+      border-radius: 14px;
       overflow: hidden;
-      border: 2px solid #283546;
-      background: #070b12;
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      background: #070a0f;
     }
     canvas {
       display: block;
       width: 100%;
       height: 100%;
-      cursor: pointer;
     }
-    /* Top HUD */
+
+    /* Realistic Minimalist HUD */
     #hud {
       position: absolute;
-      top: 16px;
-      left: 22px;
-      right: 22px;
+      top: 18px;
+      left: 24px;
+      right: 24px;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       pointer-events: none;
       z-index: 5;
     }
-    .bars-panel {
+    .health-panel {
       display: flex;
       flex-direction: column;
-      gap: 7px;
-      width: 290px;
+      gap: 6px;
+      width: 260px;
     }
-    .bar-row {
+    .health-header {
       display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .bar-label {
+      justify-content: space-between;
       font-size: 11px;
-      font-weight: 900;
+      font-weight: 800;
+      letter-spacing: 1.5px;
       color: #cbd5e1;
-      width: 62px;
-      letter-spacing: 1px;
-      text-shadow: 0 2px 4px #000;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
     }
     .bar-track {
-      flex: 1;
-      height: 16px;
-      background: rgba(10, 15, 24, 0.85);
-      border: 1.5px solid #475569;
-      border-radius: 8px;
+      width: 100%;
+      height: 14px;
+      background: rgba(12, 16, 22, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 7px;
       overflow: hidden;
       position: relative;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.85);
+      box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9);
     }
     #hpFill {
       height: 100%;
       width: 100%;
-      background: linear-gradient(90deg, #991b1b 0%, #ef4444 45%, #22c55e 100%);
+      background: linear-gradient(90deg, #7f1d1d 0%, #dc2626 50%, #16a34a 100%);
       transition: width 0.15s ease-out;
     }
-    #hpDamageFill {
+    #hpTrail {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
       width: 100%;
-      background: #fca5a5;
+      background: rgba(248, 113, 113, 0.65);
       z-index: -1;
       transition: width 0.45s ease-out;
     }
-    #staminaFill {
-      height: 100%;
-      width: 100%;
-      background: linear-gradient(90deg, #0284c7, #38bdf8);
-      transition: width 0.08s linear;
-    }
-    #rageFill {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #d97706, #f59e0b, #fef08a);
-      transition: width 0.15s ease-out;
-    }
-    .bar-value {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 10px;
-      font-weight: 900;
-      color: #fff;
-      text-shadow: 0 1px 3px #000;
-    }
     .score-panel {
       text-align: right;
-      color: #fff;
-      text-shadow: 0 2px 6px rgba(0,0,0,0.95);
+      color: #f8fafc;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
     }
     .score-main {
       font-size: 26px;
@@ -131,108 +107,74 @@
       letter-spacing: 1px;
     }
     .score-main span {
-      color: #fbbf24;
+      color: #f59e0b;
     }
     .score-sub {
-      font-size: 13px;
+      font-size: 12px;
       color: #94a3b8;
       font-weight: 700;
+      letter-spacing: 0.8px;
       margin-top: 2px;
     }
-    #runnerHint {
-      position: absolute;
-      bottom: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      color: rgba(203, 213, 225, 0.7);
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      pointer-events: none;
-      text-shadow: 0 2px 4px #000;
-      background: rgba(15, 23, 42, 0.55);
-      padding: 5px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(148, 163, 184, 0.2);
-    }
-    #modeBanner {
-      position: absolute;
-      top: 72px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(153, 27, 27, 0.92);
-      border: 1.5px solid #fca5a5;
-      color: #fff;
-      padding: 7px 26px;
-      border-radius: 22px;
-      font-weight: 900;
-      font-size: 14px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      pointer-events: none;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.8);
-      transition: opacity 0.3s;
-      opacity: 0;
-      z-index: 6;
-    }
 
-    /* Combat Controller - ONLY Visible in 3D Wolf POV Fight Mode */
-    #combatControls {
+    /* Sleek 2-Button Controller (Only UP & DOWN, Zero Blue Highlight) */
+    #controls {
       position: absolute;
-      bottom: 16px;
-      left: 20px;
-      right: 20px;
+      bottom: 22px;
+      left: 28px;
+      right: 28px;
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
+      align-items: center;
       pointer-events: none;
       z-index: 8;
     }
-    .ctrl-cluster {
-      display: flex;
-      gap: 10px;
+    .ctrl-btn {
       pointer-events: auto;
-    }
-    .c-btn {
-      background: rgba(15, 23, 42, 0.84);
-      border: 2px solid rgba(148, 163, 184, 0.55);
-      color: #f8fafc;
-      padding: 12px 16px;
-      border-radius: 14px;
-      font-size: 14px;
-      font-weight: 900;
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: rgba(15, 20, 28, 0.55);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: rgba(248, 250, 252, 0.9);
       cursor: pointer;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.75);
-      transition: transform 0.08s, background 0.12s, border-color 0.12s;
-      min-width: 92px;
-      text-align: center;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      transition: transform 0.08s ease, background 0.12s ease, border-color 0.12s ease;
     }
-    .c-btn span {
-      display: block;
+    .ctrl-btn svg {
+      width: 34px;
+      height: 34px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+    .ctrl-btn span {
       font-size: 10px;
-      color: #94a3b8;
-      font-weight: 700;
-      margin-top: 3px;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      margin-top: 4px;
+      color: rgba(203, 213, 225, 0.8);
     }
-    .c-btn:active {
-      transform: scale(0.92);
-      background: rgba(245, 158, 11, 0.9);
-      color: #090d16;
-    }
-    .c-btn.atk-bite { border-color: #f87171; }
-    .c-btn.atk-claw { border-color: #fbbf24; }
-    .c-btn.atk-pounce { border-color: #c084fc; }
-    .c-btn.atk-howl {
-      border-color: #38bdf8;
-      background: rgba(2, 132, 199, 0.35);
+    .ctrl-btn.pressed {
+      transform: scale(0.91);
+      background: rgba(245, 158, 11, 0.28);
+      border-color: rgba(245, 158, 11, 0.75);
+      color: #fef3c7;
     }
 
     /* Start / Game Over Overlay */
     #overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle, rgba(15, 23, 42, 0.86) 0%, rgba(4, 6, 10, 0.96) 100%);
+      background: radial-gradient(circle, rgba(14, 20, 28, 0.82) 0%, rgba(5, 7, 10, 0.96) 100%);
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -243,47 +185,30 @@
       z-index: 15;
     }
     #overlay h1 {
-      font-size: 42px;
-      margin-bottom: 8px;
+      font-size: 44px;
+      margin-bottom: 10px;
       color: #f8fafc;
       text-transform: uppercase;
       letter-spacing: 3px;
-      text-shadow: 0 4px 20px rgba(0,0,0,0.9);
+      text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
     }
-    .guide-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      max-width: 780px;
-      margin: 12px 0 22px;
-      text-align: left;
-      background: rgba(30, 41, 59, 0.6);
-      padding: 16px 22px;
-      border-radius: 12px;
-      border: 1px solid rgba(148, 163, 184, 0.3);
-    }
-    .guide-col h3 {
-      color: #fbbf24;
-      font-size: 14px;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .guide-col p {
-      font-size: 13px;
+    #overlay p {
+      font-size: 15px;
       color: #cbd5e1;
-      line-height: 1.55;
+      max-width: 560px;
+      line-height: 1.65;
+      margin-bottom: 26px;
     }
     #startBtn {
-      padding: 14px 44px;
-      font-size: 19px;
+      padding: 14px 46px;
+      font-size: 18px;
       font-weight: 900;
-      color: #090d16;
-      background: linear-gradient(135deg, #fbbf24 0%, #ea580c 100%);
+      color: #090d14;
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
       border: none;
       border-radius: 30px;
       cursor: pointer;
-      box-shadow: 0 6px 22px rgba(234, 88, 12, 0.55);
+      box-shadow: 0 6px 24px rgba(217, 119, 6, 0.5);
       letter-spacing: 1.5px;
       transition: transform 0.15s ease;
     }
@@ -298,82 +223,46 @@
 <body>
 
 <div id="gameContainer">
-  <canvas id="gameCanvas" width="1000" height="540"></canvas>
+  <canvas id="gameCanvas" width="1000" height="520"></canvas>
 
   <div id="hud">
-    <div class="bars-panel">
-      <div class="bar-row">
-        <div class="bar-label">HEALTH</div>
-        <div class="bar-track">
-          <div id="hpDamageFill"></div>
-          <div id="hpFill"></div>
-          <div class="bar-value" id="hpText">100 / 100</div>
-        </div>
+    <div class="health-panel">
+      <div class="health-header">
+        <span>WOLF VITALITY</span>
+        <span id="hpText">100%</span>
       </div>
-      <div class="bar-row">
-        <div class="bar-label">STAMINA</div>
-        <div class="bar-track" style="height: 11px;">
-          <div id="staminaFill"></div>
-        </div>
-      </div>
-      <div class="bar-row">
-        <div class="bar-label">RAGE</div>
-        <div class="bar-track" style="height: 9px;">
-          <div id="rageFill"></div>
-        </div>
+      <div class="bar-track">
+        <div id="hpTrail"></div>
+        <div id="hpFill"></div>
       </div>
     </div>
-
-    <div id="modeBanner">3D WOLF POV: DEVOUR SHEEP & FIGHT FARMERS!</div>
 
     <div class="score-panel">
       <div class="score-main">SKILL SCORE: <span id="scoreDisplay">0</span></div>
-      <div class="score-sub" id="phaseDisplay">NEXT PASTURE RAID: 450m</div>
+      <div class="score-sub" id="streakDisplay">STREAK MULTIPLIER: x1</div>
     </div>
   </div>
 
-  <!-- Subtle screen hint during Runner (No buttons blocking screen!) -->
-  <div id="runnerHint">
-    TAP SCREEN (or Space/Up) = Jump &bull; SWIPE DOWN (or Down) = Crouch/Dive &bull; SWIPE RIGHT (or F) = Smash Fence
-  </div>
-
-  <!-- 3D Wolf POV Combat Controller (Hidden during Runner, appears automatically in Fight Scene) -->
-  <div id="combatControls" class="hidden">
-    <div class="ctrl-cluster">
-      <button class="c-btn" id="btnDodgeLeft">◀ DODGE LEFT<span>A / Left Arrow</span></button>
-      <button class="c-btn" id="btnGuard">🛡️ BRACE / DUCK<span>S / Down Arrow</span></button>
-      <button class="c-btn" id="btnDodgeRight">DODGE RIGHT ▶<span>D / Right Arrow</span></button>
+  <!-- Sleek Two-Button Glass Controller: DOWN (Left Hand) & UP (Right Hand) -->
+  <div id="controls">
+    <div class="ctrl-btn" id="btnDown" role="button" aria-label="Crouch or Dive">
+      <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      <span>CROUCH</span>
     </div>
-    <div class="ctrl-cluster">
-      <button class="c-btn atk-bite" id="btnBite">🐺 FANG BITE<span>J / Fast Snap</span></button>
-      <button class="c-btn atk-claw" id="btnClaw">🐾 CLAW SLASH<span>K / Wide Swipe</span></button>
-      <button class="c-btn atk-pounce" id="btnPounce">🩸 THROAT POUNCE<span>L / Heavy Leap</span></button>
-      <button class="c-btn atk-howl" id="btnHowl">🌕 ALPHA HOWL<span>Space / Heal+Stun</span></button>
+    <div class="ctrl-btn" id="btnUp" role="button" aria-label="Leap">
+      <svg viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+      <span>LEAP</span>
     </div>
   </div>
 
   <div id="overlay">
-    <h1 id="overlayTitle">Alpha Wolf: Wild Hunt</h1>
-    <div class="guide-grid" id="guideGrid">
-      <div class="guide-col">
-        <h3>1. Pure Screen Runner (No Buttons)</h3>
-        <p>
-          • <strong>Tap Screen (or Up/W/Space):</strong> Leap & Double-Leap.<br>
-          • <strong>Swipe Down / Hold Bottom (or Down/S):</strong> Crouch under eagles or fast-fall.<br>
-          • <strong>Swipe Right (or F/Shift):</strong> Lunge & shatter wooden ranch fences (+3 Skill).<br>
-          • <strong>Skill Scoring:</strong> Zero free distance points—earn points only from close dodges, fence smashes, and hunting!
-        </p>
-      </div>
-      <div class="guide-col">
-        <h3>2. 3D Wolf POV Farmer Combat</h3>
-        <p>
-          • Every 450m, you raid a sheep flock and the camera shifts into <strong>First-Person 3D Wolf POV</strong>!<br>
-          • <strong>4 Wolf Attacks:</strong> Fang Bite (Fast), Claw Slash (Wide AOE), Throat Pounce (Armor Break), and Alpha Howl (Rage Heal + Stun).<br>
-          • <strong>Dodge Left/Right</strong> when farmers flash RED to evade pitchforks & clubs!
-        </p>
-      </div>
-    </div>
-    <button id="startBtn">START THE HUNT</button>
+    <h1 id="overlayTitle">Timber Wolf: Wild Run</h1>
+    <p id="overlayDesc">
+      Use the <strong>UP</strong> button (or <strong>W / Up Arrow / Space</strong>) to Leap &amp; Double-Leap over boulders and bear traps.<br>
+      Hold the <strong>DOWN</strong> button (or <strong>S / Down Arrow</strong>) to Crouch-Slide under hollow logs, duck swooping eagles, or dive mid-air.<br>
+      <strong>Skill Scoring:</strong> Earn low-number points exclusively from clean evades (+1), razor-close dodges (+2), and hunting meat (+3).
+    </p>
+    <button id="startBtn">BEGIN THE RUN</button>
   </div>
 </div>
 
@@ -381,35 +270,30 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
-// UI Elements
 const hpFill = document.getElementById('hpFill');
-const hpDamageFill = document.getElementById('hpDamageFill');
+const hpTrail = document.getElementById('hpTrail');
 const hpText = document.getElementById('hpText');
-const staminaFill = document.getElementById('staminaFill');
-const rageFill = document.getElementById('rageFill');
 const scoreDisplay = document.getElementById('scoreDisplay');
-const phaseDisplay = document.getElementById('phaseDisplay');
-const modeBanner = document.getElementById('modeBanner');
-const runnerHint = document.getElementById('runnerHint');
-const combatControls = document.getElementById('combatControls');
+const streakDisplay = document.getElementById('streakDisplay');
 const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlayTitle');
-const guideGrid = document.getElementById('guideGrid');
+const overlayDesc = document.getElementById('overlayDesc');
 const startBtn = document.getElementById('startBtn');
+const btnUp = document.getElementById('btnUp');
+const btnDown = document.getElementById('btnDown');
 
 const GROUND_Y = 425;
-let gameState = 'MENU'; // 'MENU', 'RUNNER', 'POV_COMBAT', 'GAMEOVER'
+let gameState = 'MENU';
 let lastTime = 0;
 
-// Skill-based low-number score
+// Low-number skill-based scoring
 let skillScore = 0;
-let raidWave = 1;
-let distanceToRaid = 450;
+let streak = 0;
+let multiplier = 1;
 let gameSpeed = 430;
 let screenShake = 0;
-let redFlash = 0;
+let damageVignette = 0;
 
-// Runner Entities
 let obstacles = [];
 let foods = [];
 let particles = [];
@@ -417,107 +301,88 @@ let popups = [];
 let spawnObsTimer = 0;
 let spawnFoodTimer = 0;
 
-// 3D POV Combat Entities & State
-// Lanes: -1 (Left), 0 (Center), 1 (Right)
-const povWolf = {
-  lane: 0,
-  visualLane: 0,
-  dodgeCooldown: 0,
-  bracing: false,
-  action: 'IDLE', // 'IDLE', 'BITE', 'CLAW', 'POUNCE', 'HOWL'
-  actionTimer: 0,
-  actionDuration: 0,
-  pounceZoom: 0,
-  jawSnap: 0,
-  leftClawSwipe: 0,
-  rightClawSwipe: 0,
-  breathCycle: 0
-};
-
-let povEnemies = [];
-let povSheep = [];
-let slashTrails = [];
-
-function addPopup(x, y, text, color = '#fbbf24', size = 19) {
-  popups.push({ x, y, text, color, size, life: 1.15, vy: -55 });
+function addPopup(x, y, text, color = '#fbbf24', size = 17) {
+  popups.push({ x, y, text, color, size, life: 1.05, vy: -48 });
 }
 
-function addScore(points, label, x, y, color = '#fbbf24') {
-  skillScore += points;
-  wolf.rage = Math.min(100, wolf.rage + points * 4);
-  addPopup(x, y, `+${points} ${label}`, color, 18);
+function addSkillPoints(basePts, label, x, y, color = '#fbbf24') {
+  streak++;
+  multiplier = Math.min(3, 1 + Math.floor(streak / 5));
+  const pts = basePts * multiplier;
+  skillScore += pts;
+  addPopup(x, y, `+${pts} ${label}`, color, 17);
   updateHUD();
 }
 
-function createParticles(x, y, color, count = 14, speed = 260) {
+function createParticles(x, y, color, count = 12, speed = 220) {
   for (let i = 0; i < count; i++) {
     particles.push({
       x,
       y,
-      vx: (Math.random() - 0.5) * speed,
-      vy: (Math.random() - 0.75) * speed,
-      size: Math.random() * 5 + 1.5,
+      vx: (Math.random() - 0.65) * speed,
+      vy: (Math.random() - 0.8) * speed,
+      size: Math.random() * 4 + 1.5,
       color,
       life: 1
     });
   }
 }
 
-// 2D Side-View Articulated Wolf (Used in Runner Phase)
+// Hyper-Realistic Articulated Timber Wolf
 const wolf = {
-  x: 135,
+  x: 145,
   y: GROUND_Y,
   vy: 0,
-  gravity: 2150,
-  jumpForce: -750,
+  gravity: 2200,
+  jumpForce: -755,
   jumpsLeft: 2,
   hp: 100,
   maxHp: 100,
-  stamina: 100,
-  maxStamina: 100,
-  rage: 0,
   invincibleTimer: 0,
-  lungeTimer: 0,
   crouching: false,
   runCycle: 0,
 
   reset() {
-    this.x = 135;
+    this.x = 145;
     this.y = GROUND_Y;
     this.vy = 0;
     this.jumpsLeft = 2;
     this.hp = 100;
-    this.stamina = 100;
-    this.rage = 35;
     this.invincibleTimer = 0;
-    this.lungeTimer = 0;
     this.crouching = false;
     this.runCycle = 0;
   },
 
+  leap() {
+    if (gameState !== 'PLAYING') return;
+    if (this.jumpsLeft > 0) {
+      this.vy = this.jumpForce * (this.jumpsLeft === 1 ? 0.88 : 1);
+      this.jumpsLeft--;
+      this.crouching = false;
+      // Natural soil & leaf kick-up (Zero blue effects)
+      createParticles(this.x + 25, this.y, '#78716c', 12, 200);
+      createParticles(this.x + 20, this.y, '#a8a29e', 6, 150);
+    }
+  },
+
+  setCrouch(active) {
+    if (gameState !== 'PLAYING') return;
+    this.crouching = active;
+    if (active && this.y < GROUND_Y) {
+      this.vy = Math.max(this.vy, 760); // Fast-fall dive
+    }
+  },
+
   takeDamage(amount) {
     if (this.invincibleTimer > 0) return;
-    if (gameState === 'POV_COMBAT' && povWolf.bracing) {
-      amount = Math.round(amount * 0.35);
-      addScore(1, 'GUARDED!', canvas.width / 2, 260, '#38bdf8');
-    }
     this.hp = Math.max(0, this.hp - amount);
-    this.invincibleTimer = 0.95;
-    screenShake = 14;
-    redFlash = 0.45;
-    createParticles(
-      gameState === 'RUNNER' ? this.x + 40 : canvas.width / 2,
-      gameState === 'RUNNER' ? this.y - 25 : canvas.height - 120,
-      '#dc2626',
-      24
-    );
-    addPopup(
-      gameState === 'RUNNER' ? this.x + 20 : canvas.width / 2 - 30,
-      gameState === 'RUNNER' ? this.y - 55 : 220,
-      `-${amount} HP`,
-      '#ef4444',
-      22
-    );
+    this.invincibleTimer = 1.15;
+    streak = 0;
+    multiplier = 1;
+    screenShake = 12;
+    damageVignette = 0.42;
+    createParticles(this.x + 42, this.y - 26, '#991b1b', 22, 260);
+    addPopup(this.x + 20, this.y - 55, `-${amount} HP`, '#ef4444', 20);
     updateHUD();
 
     if (this.hp <= 0) {
@@ -530,240 +395,328 @@ const wolf = {
     this.hp = Math.min(this.maxHp, this.hp + amount);
     const gained = Math.round(this.hp - prev);
     if (gained > 0) {
-      addPopup(
-        gameState === 'RUNNER' ? this.x + 20 : canvas.width / 2,
-        gameState === 'RUNNER' ? this.y - 50 : 240,
-        `+${gained} HP`,
-        '#22c55e',
-        18
-      );
+      addPopup(this.x + 25, this.y - 52, `+${gained} HP`, '#22c55e', 17);
     }
     updateHUD();
   },
 
-  jump() {
-    if (gameState !== 'RUNNER') return;
-    if (this.jumpsLeft > 0) {
-      this.vy = this.jumpForce;
-      this.jumpsLeft--;
-      this.crouching = false;
-      createParticles(this.x + 25, this.y, '#94a3b8', 12);
-    }
-  },
-
-  crouchStart() {
-    if (gameState !== 'RUNNER') return;
-    this.crouching = true;
-    if (this.y < GROUND_Y) {
-      this.vy = Math.max(this.vy, 680); // Fast-fall dive
-    }
-  },
-
-  crouchEnd() {
-    this.crouching = false;
-  },
-
-  runnerLunge() {
-    if (gameState !== 'RUNNER') return;
-    if (this.lungeTimer > 0 || this.stamina < 20) return;
-    this.stamina -= 20;
-    this.lungeTimer = 0.34;
-    createParticles(this.x + 45, this.y - 24, '#38bdf8', 15);
-  },
-
-  updateRunner(dt) {
-    this.stamina = Math.min(this.maxStamina, this.stamina + 25 * dt);
+  update(dt) {
     if (this.invincibleTimer > 0) this.invincibleTimer -= dt;
-    if (this.lungeTimer > 0) this.lungeTimer -= dt;
 
     this.vy += this.gravity * dt;
     this.y += this.vy * dt;
 
     if (this.y >= GROUND_Y) {
+      if (this.vy > 400) {
+        createParticles(this.x + 35, GROUND_Y, '#57534e', 8, 140);
+      }
       this.y = GROUND_Y;
       this.vy = 0;
       this.jumpsLeft = 2;
       this.runCycle += dt * (gameSpeed * 0.033);
+
+      // Subtle forest floor dust while sprinting
+      if (Math.random() < 0.35) {
+        createParticles(this.x + 12, GROUND_Y, 'rgba(120, 113, 108, 0.55)', 1, 90);
+      }
     } else {
-      this.runCycle += dt * 4;
+      this.runCycle += dt * 3.8;
     }
   },
 
-  drawLimb(hipX, hipY, phaseOffset, isFront, colorUpper, colorLower) {
+  drawArticulatedLeg(hipX, hipY, phaseOffset, isFront, upperColor, lowerColor, pawColor) {
     const isAirborne = this.y < GROUND_Y;
-    const angle = isAirborne ? (isFront ? -0.55 : 0.55) : Math.sin(this.runCycle + phaseOffset) * 0.65;
-    const kneeBend = isAirborne ? 0.35 : (Math.cos(this.runCycle + phaseOffset) * 0.4 + 0.45);
-    const len = this.crouching ? 11 : 15;
+    const stride = isAirborne
+      ? (isFront ? -0.58 : 0.62)
+      : Math.sin(this.runCycle + phaseOffset) * 0.68;
+    const jointBend = isAirborne
+      ? 0.4
+      : (Math.cos(this.runCycle + phaseOffset) * 0.42 + 0.48);
 
-    const kneeX = hipX + Math.sin(angle) * len;
-    const kneeY = hipY + Math.cos(angle) * len;
-    const footAngle = isFront ? angle + kneeBend * 0.7 : angle - kneeBend * 0.7;
-    const footX = kneeX + Math.sin(footAngle) * len;
-    const footY = kneeY + Math.cos(footAngle) * len;
+    const upperLen = this.crouching ? 11 : 16;
+    const lowerLen = this.crouching ? 11 : 15;
+
+    const kneeX = hipX + Math.sin(stride) * upperLen;
+    const kneeY = hipY + Math.cos(stride) * upperLen;
+
+    const ankleAngle = isFront ? stride + jointBend * 0.72 : stride - jointBend * 0.72;
+    const pawX = kneeX + Math.sin(ankleAngle) * lowerLen;
+    const pawY = kneeY + Math.cos(ankleAngle) * lowerLen;
 
     ctx.lineCap = 'round';
-    ctx.strokeStyle = colorUpper;
-    ctx.lineWidth = 8;
+    ctx.lineJoin = 'round';
+
+    // Muscular Thigh / Shoulder
+    ctx.strokeStyle = upperColor;
+    ctx.lineWidth = 8.5;
     ctx.beginPath();
     ctx.moveTo(hipX, hipY);
     ctx.lineTo(kneeX, kneeY);
     ctx.stroke();
 
-    ctx.strokeStyle = colorLower;
+    // Lower Shin / Foreleg
+    ctx.strokeStyle = lowerColor;
     ctx.lineWidth = 5.5;
     ctx.beginPath();
     ctx.moveTo(kneeX, kneeY);
-    ctx.lineTo(footX, footY);
+    ctx.lineTo(pawX, pawY);
     ctx.stroke();
+
+    // Paw & Claws
+    ctx.fillStyle = pawColor;
+    ctx.beginPath();
+    ctx.ellipse(pawX + 3.5, pawY, 5, 2.6, 0, 0, Math.PI * 2);
+    ctx.fill();
   },
 
-  drawSideView() {
-    if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 16) % 2 === 0) return;
+  draw() {
+    if (this.invincibleTimer > 0 && Math.floor(this.invincibleTimer * 15) % 2 === 0) return;
 
     ctx.save();
     ctx.translate(this.x, this.y);
 
     const isAirborne = this.y < GROUND_Y;
-    const crouchY = this.crouching ? 12 : 0;
-    const bounce = isAirborne ? 0 : Math.abs(Math.cos(this.runCycle)) * 4;
+    const crouchDrop = this.crouching ? 15 : 0;
+    const pitchAngle = isAirborne
+      ? Math.max(-0.28, Math.min(0.28, this.vy * 0.00032))
+      : (this.crouching ? 0.08 : Math.sin(this.runCycle) * 0.045);
+    const bounce = isAirborne ? 0 : Math.abs(Math.cos(this.runCycle)) * 4.2;
 
-    // Ground Shadow
-    const shadowScale = Math.max(0.3, 1 - (GROUND_Y - this.y) / 260);
-    ctx.fillStyle = `rgba(0, 0, 0, ${0.48 * shadowScale})`;
+    // Realistic Soft Ground Shadow
+    const shadowScale = Math.max(0.25, 1 - (GROUND_Y - this.y) / 270);
+    ctx.fillStyle = `rgba(0, 0, 0, ${0.55 * shadowScale})`;
     ctx.beginPath();
-    ctx.ellipse(42, 2, 42 * shadowScale, 6 * shadowScale, 0, 0, Math.PI * 2);
+    ctx.ellipse(45, 2, 46 * shadowScale, 6.5 * shadowScale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.translate(0, -bounce + crouchY);
+    ctx.translate(0, -bounce + crouchDrop);
+    ctx.rotate(pitchAngle);
 
-    if (this.lungeTimer > 0) {
-      ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
-      ctx.beginPath();
-      ctx.ellipse(42, -24, 54, 20, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // Far-side Legs (Shadowed)
+    this.drawArticulatedLeg(16, -26, Math.PI, false, '#1c1917', '#141210', '#0c0a09');
+    this.drawArticulatedLeg(60, -26, 0, true, '#1c1917', '#141210', '#0c0a09');
 
-    this.drawLimb(16, -25, Math.PI, false, '#262b33', '#181b20');
-    this.drawLimb(56, -25, 0, true, '#262b33', '#181b20');
-
-    // Tail
-    const tailWag = Math.sin(this.runCycle) * 5;
-    ctx.fillStyle = '#3b424d';
+    // Bushy Timber Wolf Tail
+    const tailWave = Math.sin(this.runCycle) * 5;
+    const tailGrad = ctx.createLinearGradient(-28, -25, 12, -30);
+    tailGrad.addColorStop(0, '#1c1917');
+    tailGrad.addColorStop(0.6, '#57534e');
+    tailGrad.addColorStop(1, '#44403c');
+    ctx.fillStyle = tailGrad;
     ctx.beginPath();
-    ctx.moveTo(12, -30);
-    ctx.quadraticCurveTo(-14, -36 + tailWag, -25, -18 + tailWag);
-    ctx.quadraticCurveTo(-8, -14 + tailWag, 14, -22);
+    ctx.moveTo(12, -31);
+    ctx.quadraticCurveTo(-15, -38 + tailWave, -30, -20 + tailWave);
+    ctx.quadraticCurveTo(-12, -13 + tailWave, 14, -22);
     ctx.closePath();
     ctx.fill();
 
-    // Torso
-    const bodyGrad = ctx.createLinearGradient(0, -45, 0, -14);
-    bodyGrad.addColorStop(0, '#1e232a');
-    bodyGrad.addColorStop(0.55, '#525b69');
-    bodyGrad.addColorStop(1, '#cbd5e1');
-    ctx.fillStyle = bodyGrad;
+    // Main Wolf Torso & Muscular Ribcage
+    const coatGrad = ctx.createLinearGradient(0, -46, 0, -14);
+    coatGrad.addColorStop(0, '#1c1917');    // Dark charcoal dorsal guard hairs
+    coatGrad.addColorStop(0.48, '#57534e'); // Warm grey-brown flank
+    coatGrad.addColorStop(0.82, '#a8a29e'); // Tawny buff transition
+    coatGrad.addColorStop(1, '#e7e5e4');    // Cream underbelly
+
+    ctx.fillStyle = coatGrad;
     ctx.beginPath();
-    ctx.moveTo(10, -28);
-    ctx.quadraticCurveTo(32, -39, 52, -41);
-    ctx.lineTo(68, -32);
-    ctx.quadraticCurveTo(64, -15, 48, -17);
-    ctx.quadraticCurveTo(28, -21, 14, -19);
+    ctx.moveTo(10, -29); // Haunches
+    ctx.quadraticCurveTo(32, -40, 56, -43); // Spine to shoulder hump
+    ctx.lineTo(72, -33); // Muscular neck base
+    ctx.quadraticCurveTo(68, -15, 50, -16); // Deep chest
+    ctx.quadraticCurveTo(30, -21, 14, -19); // Tucked abdomen
     ctx.closePath();
     ctx.fill();
 
-    this.drawLimb(18, -24, 0.3, false, '#4b5563', '#94a3b8');
-    this.drawLimb(58, -24, Math.PI + 0.3, true, '#4b5563', '#94a3b8');
-
-    // Head
-    ctx.fillStyle = '#47505e';
+    // Thick Layered Neck Ruff Fur
+    ctx.fillStyle = '#44403c';
     ctx.beginPath();
-    ctx.moveTo(54, -36);
-    ctx.lineTo(62, -50);
-    ctx.lineTo(74, -47);
-    ctx.lineTo(89, -42);
-    ctx.lineTo(85, -34);
-    ctx.lineTo(62, -28);
+    ctx.moveTo(48, -42);
+    ctx.lineTo(57, -48);
+    ctx.lineTo(59, -41);
+    ctx.lineTo(67, -46);
+    ctx.lineTo(68, -35);
+    ctx.lineTo(50, -25);
     ctx.closePath();
     ctx.fill();
 
-    // Ears & Amber Eye
-    ctx.fillStyle = '#2d333d';
+    // Near-side Legs
+    this.drawArticulatedLeg(19, -25, 0.25, false, '#44403c', '#78716c', '#a8a29e');
+    this.drawArticulatedLeg(62, -25, Math.PI + 0.25, true, '#44403c', '#78716c', '#a8a29e');
+
+    // Back Ear
+    ctx.fillStyle = '#292524';
     ctx.beginPath();
-    ctx.moveTo(57, -44);
-    ctx.lineTo(54, -59);
-    ctx.lineTo(65, -46);
+    ctx.moveTo(66, -46);
+    ctx.lineTo(64, -59);
+    ctx.lineTo(73, -47);
     ctx.closePath();
     ctx.fill();
 
+    // Sculpted Wolf Skull & Muzzle
+    const headGrad = ctx.createLinearGradient(58, -52, 88, -30);
+    headGrad.addColorStop(0, '#292524');
+    headGrad.addColorStop(0.6, '#57534e');
+    headGrad.addColorStop(1, '#78716c');
+    ctx.fillStyle = headGrad;
+    ctx.beginPath();
+    ctx.moveTo(58, -37);
+    ctx.lineTo(66, -51); // Brow
+    ctx.lineTo(78, -48); // Stop
+    ctx.lineTo(94, -43); // Nasal bridge
+    ctx.lineTo(91, -36); // Upper muzzle
+    ctx.lineTo(76, -35);
+    ctx.lineTo(65, -28);
+    ctx.closePath();
+    ctx.fill();
+
+    // White Cheek & Jaw Fur
+    ctx.fillStyle = '#e7e5e4';
+    ctx.beginPath();
+    ctx.moveTo(65, -28);
+    ctx.lineTo(77, -37);
+    ctx.lineTo(91, -36);
+    ctx.lineTo(87, -32);
+    ctx.lineTo(71, -31);
+    ctx.closePath();
+    ctx.fill();
+
+    // Near Ear
+    ctx.fillStyle = '#44403c';
+    ctx.beginPath();
+    ctx.moveTo(61, -45);
+    ctx.lineTo(58, -60);
+    ctx.lineTo(69, -47);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#a8a29e';
+    ctx.beginPath();
+    ctx.moveTo(62, -46);
+    ctx.lineTo(60, -56);
+    ctx.lineTo(67, -47);
+    ctx.closePath();
+    ctx.fill();
+
+    // Wet Black Nose
+    ctx.fillStyle = '#090a0f';
+    ctx.beginPath();
+    ctx.arc(93, -41.5, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Piercing Golden-Amber Wolf Eye
     ctx.fillStyle = '#f59e0b';
     ctx.beginPath();
-    ctx.arc(72, -43, 2.3, 0, Math.PI * 2);
+    ctx.moveTo(73, -45);
+    ctx.lineTo(79, -44);
+    ctx.lineTo(75, -41);
+    ctx.closePath();
     ctx.fill();
 
-    // Bite/Lunge Slash Arc
-    if (this.lungeTimer > 0.1) {
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(85, -32, 24, -0.7, 0.8);
-      ctx.stroke();
-    }
     ctx.restore();
   },
 
   getHitbox() {
-    const crouchShrink = this.crouching ? 15 : 0;
+    // Crouching lowers the wolf's top hitbox by 18px so it slides cleanly under high logs & eagles
+    const crouchOffset = this.crouching ? 18 : 0;
     return {
-      x: this.x + 14,
-      y: this.y - 44 + crouchShrink,
-      width: 62,
-      height: 40 - crouchShrink
+      x: this.x + 16,
+      y: this.y - 46 + crouchOffset,
+      width: 66,
+      height: 42 - crouchOffset
     };
   }
 };
 
-// Parallax Background Layers
-const stars = Array.from({ length: 55 }, () => ({
+// Realistic Parallax Wilderness Layers
+const stars = Array.from({ length: 65 }, () => ({
   x: Math.random() * canvas.width,
-  y: Math.random() * 230,
-  r: Math.random() * 1.5 + 0.5
+  y: Math.random() * 240,
+  r: Math.random() * 1.4 + 0.4,
+  alpha: Math.random() * 0.65 + 0.25
 }));
-const mountains = Array.from({ length: 8 }, (_, i) => ({
-  x: i * 160,
-  w: 230,
-  h: 135 + (i % 3) * 30
+
+const mountains = Array.from({ length: 7 }, (_, i) => ({
+  x: i * 180,
+  w: 260,
+  h: 150 + (i % 3) * 35
 }));
-const bgTrees = Array.from({ length: 22 }, (_, i) => ({
-  x: i * 55,
-  h: 80 + (i % 4) * 20,
-  w: 40
+
+const farTrees = Array.from({ length: 26 }, (_, i) => ({
+  x: i * 44,
+  h: 70 + (i % 4) * 18,
+  w: 32
+}));
+
+const midTrees = Array.from({ length: 18 }, (_, i) => ({
+  x: i * 68,
+  h: 110 + (i % 3) * 28,
+  w: 48
+}));
+
+const grassBlades = Array.from({ length: 36 }, (_, i) => ({
+  x: i * 30,
+  h: 7 + (i % 3) * 4
+}));
+
+const fireflies = Array.from({ length: 18 }, () => ({
+  x: Math.random() * canvas.width,
+  y: GROUND_Y - 20 - Math.random() * 140,
+  phase: Math.random() * Math.PI * 2,
+  speed: 0.4 + Math.random() * 0.5
 }));
 
 function spawnObstacle() {
   const roll = Math.random();
-  if (roll < 0.25) {
-    obstacles.push({ type: 'TRAP', x: canvas.width + 60, y: GROUND_Y, width: 46, height: 18, damage: 26, passed: false });
-  } else if (roll < 0.50) {
-    obstacles.push({ type: 'FENCE', x: canvas.width + 60, y: GROUND_Y, width: 38, height: 60, damage: 22, passed: false });
-  } else if (roll < 0.76) {
-    const lowSwoop = Math.random() > 0.45;
+  if (roll < 0.26) {
+    // Steel Bear Trap (Low on ground — must leap)
     obstacles.push({
-      type: 'EAGLE',
-      x: canvas.width + 60,
-      y: GROUND_Y - (lowSwoop ? 38 : 92), // 38 can be ducked under!
-      width: 64,
+      type: 'TRAP',
+      x: canvas.width + 70,
+      y: GROUND_Y,
+      width: 48,
+      height: 18,
+      damage: 25,
+      passed: false
+    });
+  } else if (roll < 0.52) {
+    // Fallen Hollow Timber Log (Suspended at head height — crouch-slide under OR double-jump over!)
+    obstacles.push({
+      type: 'OVERHANG_LOG',
+      x: canvas.width + 70,
+      y: GROUND_Y - 32, // Bottom of log is 32px above ground; standing wolf is 46px tall, crouching wolf is 28px tall!
+      width: 78,
       height: 34,
       damage: 24,
-      wingPhase: 0,
+      passed: false
+    });
+  } else if (roll < 0.78) {
+    // Swooping Bald Eagle (Flies at head level or mid-air)
+    const lowSwoop = Math.random() > 0.42;
+    obstacles.push({
+      type: 'EAGLE',
+      x: canvas.width + 70,
+      y: GROUND_Y - (lowSwoop ? 34 : 88),
+      width: 68,
+      height: 34,
+      damage: 26,
+      wingPhase: Math.random() * Math.PI * 2,
       passed: false
     });
   } else {
-    obstacles.push({ type: 'ROCK', x: canvas.width + 60, y: GROUND_Y, width: 56, height: 48, damage: 25, passed: false });
+    // Jagged Moss-Covered Granite Boulder
+    obstacles.push({
+      type: 'BOULDER',
+      x: canvas.width + 70,
+      y: GROUND_Y,
+      width: 60,
+      height: 50,
+      damage: 28,
+      passed: false
+    });
   }
 }
 
 function spawnFood() {
-  const heightOffset = Math.random() > 0.5 ? 95 : 24;
+  const heightOffset = Math.random() > 0.5 ? 92 : 22;
   foods.push({
     x: canvas.width + 50,
     y: GROUND_Y - heightOffset,
@@ -773,633 +726,6 @@ function spawnFood() {
   });
 }
 
-// ==========================================
-// 3D WOLF POV COMBAT SYSTEM
-// ==========================================
-function start3DPovCombat() {
-  gameState = 'POV_COMBAT';
-  obstacles = [];
-  foods = [];
-  povEnemies = [];
-  povSheep = [];
-  slashTrails = [];
-
-  povWolf.lane = 0;
-  povWolf.visualLane = 0;
-  povWolf.action = 'IDLE';
-  povWolf.actionTimer = 0;
-  povWolf.pounceZoom = 0;
-
-  runnerHint.classList.add('hidden');
-  combatControls.classList.remove('hidden');
-  modeBanner.textContent = `SHEEP PASTURE AMBUSH (WAVE ${raidWave}) — WOLF 3D POV!`;
-  modeBanner.style.opacity = '1';
-
-  // Spawn frightened sheep in the 3D pasture
-  for (let i = -1; i <= 1; i++) {
-    if (Math.random() < 0.8) {
-      povSheep.push({
-        lane: i,
-        z: 0.35 + Math.random() * 0.25, // 0 = far horizon, 1 = close to wolf
-        alive: true,
-        hopPhase: Math.random() * Math.PI * 2
-      });
-    }
-  }
-
-  // Spawn angry Farmers marching forward from the barn in 3D lanes
-  const farmerCount = Math.min(4, 1 + raidWave);
-  const usedLanes = [-1, 0, 1];
-  for (let i = 0; i < farmerCount; i++) {
-    const lane = usedLanes[i % 3];
-    const types = ['PITCHFORK', 'CLUB', 'TORCH'];
-    const type = types[(i + raidWave) % types.length];
-    const maxHp = type === 'CLUB' ? 115 : 85;
-    povEnemies.push({
-      type,
-      lane,
-      visualLane: lane,
-      z: 0.15 + i * 0.12, // Start in the distance and walk up to 0.82
-      hp: maxHp,
-      maxHp,
-      state: 'APPROACH', // 'APPROACH', 'IDLE', 'WINDUP', 'STRIKE', 'STUNNED'
-      stateTimer: 1.2 + i * 0.7,
-      hurtTimer: 0,
-      walkPhase: Math.random() * Math.PI * 2
-    });
-  }
-  updateHUD();
-}
-
-function povDodge(dir) {
-  if (gameState !== 'POV_COMBAT' || povWolf.dodgeCooldown > 0) return;
-  povWolf.lane = Math.max(-1, Math.min(1, povWolf.lane + dir));
-  povWolf.dodgeCooldown = 0.22;
-  wolf.stamina = Math.max(0, wolf.stamina - 10);
-  createParticles(canvas.width / 2 - dir * 120, canvas.height - 90, '#38bdf8', 10);
-}
-
-function performPovAttack(type) {
-  if (gameState !== 'POV_COMBAT' || povWolf.actionTimer > 0) return;
-
-  if (type === 'BITE') {
-    if (wolf.stamina < 14) return;
-    wolf.stamina -= 14;
-    povWolf.action = 'BITE';
-    povWolf.actionDuration = 0.28;
-    povWolf.actionTimer = 0.28;
-    povWolf.jawSnap = 1;
-    screenShake = 6;
-    resolvePovHit({ lanes: [povWolf.lane], damage: 28, stun: false, label: 'FANG BITE', score: 2 });
-  } else if (type === 'CLAW') {
-    if (wolf.stamina < 24) return;
-    wolf.stamina -= 24;
-    povWolf.action = 'CLAW';
-    povWolf.actionDuration = 0.36;
-    povWolf.actionTimer = 0.36;
-    povWolf.leftClawSwipe = 1;
-    povWolf.rightClawSwipe = 1;
-    screenShake = 9;
-    // Add glowing claw slash marks across the 3D screen
-    slashTrails.push({ x1: 240, y1: 160, x2: 760, y2: 390, life: 0.35, color: '#fbbf24' });
-    slashTrails.push({ x1: 270, y1: 120, x2: 790, y2: 350, life: 0.35, color: '#f87171' });
-    // Hits current lane AND adjacent lanes!
-    const hitLanes = [povWolf.lane - 1, povWolf.lane, povWolf.lane + 1];
-    resolvePovHit({ lanes: hitLanes, damage: 22, stun: false, label: 'CLAW SWIPE', score: 2 });
-  } else if (type === 'POUNCE') {
-    if (wolf.stamina < 38) return;
-    wolf.stamina -= 38;
-    povWolf.action = 'POUNCE';
-    povWolf.actionDuration = 0.46;
-    povWolf.actionTimer = 0.46;
-    povWolf.pounceZoom = 1;
-    povWolf.jawSnap = 1;
-    screenShake = 15;
-    slashTrails.push({ x1: 420, y1: 140, x2: 580, y2: 380, life: 0.4, color: '#c084fc' });
-    slashTrails.push({ x1: 580, y1: 140, x2: 420, y2: 380, life: 0.4, color: '#c084fc' });
-    resolvePovHit({ lanes: [povWolf.lane], damage: 52, stun: true, label: 'THROAT POUNCE!', score: 4 });
-  } else if (type === 'HOWL') {
-    if (wolf.rage < 50) {
-      addPopup(canvas.width / 2 - 60, 300, 'NEED 50% RAGE!', '#38bdf8', 16);
-      return;
-    }
-    wolf.rage = 0;
-    povWolf.action = 'HOWL';
-    povWolf.actionDuration = 0.6;
-    povWolf.actionTimer = 0.6;
-    screenShake = 12;
-    wolf.heal(30);
-    wolf.stamina = 100;
-    // Stun all farmers in the arena
-    povEnemies.forEach(f => {
-      f.state = 'STUNNED';
-      f.stateTimer = 2.0;
-      f.hurtTimer = 0.4;
-    });
-    addScore(3, 'ALPHA HOWL STUN!', canvas.width / 2 - 50, 180, '#38bdf8');
-  }
-  updateHUD();
-}
-
-function resolvePovHit({ lanes, damage, stun, label, score }) {
-  // Check sheep in target lane
-  povSheep.forEach(s => {
-    if (s.alive && lanes.includes(s.lane)) {
-      s.alive = false;
-      const sx = canvas.width / 2 + s.lane * 220;
-      createParticles(sx, 310, '#dc2626', 22);
-      wolf.heal(20);
-      addScore(5, 'SHEEP DEVOURED!', sx - 40, 260, '#22c55e');
-    }
-  });
-
-  // Check farmers in target lanes
-  let hitAny = false;
-  povEnemies.forEach(f => {
-    if (lanes.includes(f.lane) && f.z > 0.45) {
-      hitAny = true;
-      const isCounter = f.state === 'WINDUP';
-      const finalDmg = isCounter ? Math.round(damage * 1.4) : damage;
-      f.hp -= finalDmg;
-      f.hurtTimer = 0.3;
-
-      const fx = canvas.width / 2 + f.lane * 240;
-      createParticles(fx, 250, '#ef4444', 20);
-
-      if (stun || isCounter) {
-        f.state = 'STUNNED';
-        f.stateTimer = 1.4;
-        addScore(score + 1, isCounter ? 'COUNTER INTERRUPT!' : label, fx - 40, 190, '#c084fc');
-      } else {
-        addScore(score, label, fx - 30, 200, '#fbbf24');
-      }
-    }
-  });
-}
-
-function updatePovCombat(dt) {
-  wolf.stamina = Math.min(wolf.maxStamina, wolf.stamina + 22 * dt);
-  if (wolf.invincibleTimer > 0) wolf.invincibleTimer -= dt;
-  if (povWolf.dodgeCooldown > 0) povWolf.dodgeCooldown -= dt;
-
-  povWolf.breathCycle += dt * 4;
-  povWolf.visualLane += (povWolf.lane - povWolf.visualLane) * 12 * dt;
-
-  if (povWolf.actionTimer > 0) {
-    povWolf.actionTimer -= dt;
-    if (povWolf.actionTimer <= 0) {
-      povWolf.action = 'IDLE';
-    }
-  }
-  povWolf.pounceZoom *= Math.pow(0.05, dt);
-  povWolf.jawSnap *= Math.pow(0.04, dt);
-  povWolf.leftClawSwipe *= Math.pow(0.04, dt);
-  povWolf.rightClawSwipe *= Math.pow(0.04, dt);
-
-  // Update Slash Trails
-  for (let i = slashTrails.length - 1; i >= 0; i--) {
-    slashTrails[i].life -= dt;
-    if (slashTrails[i].life <= 0) slashTrails.splice(i, 1);
-  }
-
-  // Update Sheep
-  povSheep.forEach(s => {
-    if (!s.alive) return;
-    s.hopPhase += dt * 8;
-  });
-
-  // Update Farmers in 3D Perspective
-  for (let i = povEnemies.length - 1; i >= 0; i--) {
-    const f = povEnemies[i];
-    if (f.hp <= 0) {
-      const fx = canvas.width / 2 + f.lane * 240;
-      createParticles(fx, 260, '#fbbf24', 30);
-      addScore(10, 'FARMER DEFEATED!', fx - 50, 180, '#f59e0b');
-      wolf.heal(15);
-      povEnemies.splice(i, 1);
-      continue;
-    }
-
-    if (f.hurtTimer > 0) f.hurtTimer -= dt;
-    f.visualLane += (f.lane - f.visualLane) * 8 * dt;
-
-    if (f.state === 'APPROACH') {
-      f.z = Math.min(0.82, f.z + 0.35 * dt);
-      f.walkPhase += dt * 10;
-      if (f.z >= 0.82) {
-        f.state = 'IDLE';
-        f.stateTimer = 0.8 + Math.random() * 0.8;
-      }
-    } else if (f.state === 'IDLE') {
-      f.walkPhase += dt * 3;
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        // Occasionally step into the wolf's lane to pressure the player
-        if (f.lane !== povWolf.lane && Math.random() < 0.65) {
-          const targetLane = povWolf.lane;
-          const occupied = povEnemies.some(other => other !== f && other.lane === targetLane);
-          if (!occupied) f.lane = targetLane;
-        }
-        f.state = 'WINDUP';
-        f.stateTimer = f.type === 'CLUB' ? 0.85 : 0.68; // Red telegraph window
-      }
-    } else if (f.state === 'WINDUP') {
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        f.state = 'STRIKE';
-        f.stateTimer = 0.25;
-        // Did the farmer hit the wolf's current lane?
-        if (f.lane === povWolf.lane) {
-          const dmg = f.type === 'CLUB' ? 28 : (f.type === 'TORCH' ? 24 : 20);
-          wolf.takeDamage(dmg);
-        } else {
-          // Player dodged the attack by switching lanes!
-          addScore(2, 'DODGED STRIKE!', canvas.width / 2, 240, '#38bdf8');
-        }
-      }
-    } else if (f.state === 'STRIKE') {
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        f.state = 'IDLE';
-        f.stateTimer = 1.1 + Math.random() * 0.7;
-      }
-    } else if (f.state === 'STUNNED') {
-      f.stateTimer -= dt;
-      if (f.stateTimer <= 0) {
-        f.state = 'IDLE';
-        f.stateTimer = 0.7;
-      }
-    }
-  }
-
-  // All farmers defeated -> Return seamlessly to Runner!
-  if (povEnemies.length === 0) {
-    gameState = 'RUNNER';
-    raidWave++;
-    distanceToRaid = 450 + raidWave * 80;
-    combatControls.classList.add('hidden');
-    runnerHint.classList.remove('hidden');
-    addScore(15, 'PASTURE CLEARED!', canvas.width / 2 - 60, 180, '#22c55e');
-    modeBanner.textContent = 'FARMERS DEFEATED! BACK TO THE WILDERNESS!';
-    setTimeout(() => {
-      if (gameState === 'RUNNER') modeBanner.style.opacity = '0';
-    }, 2200);
-  }
-}
-
-// ==========================================
-// 3D POV RENDERER (Pasture, Farmers, & Wolf Claws/Snout)
-// ==========================================
-function draw3DPovScene() {
-  const horizonY = 195;
-  const centerX = canvas.width / 2 - povWolf.visualLane * 95;
-  const zoomOffset = povWolf.pounceZoom * 35;
-
-  // Night Sky & Barn Silhouette on Horizon
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
-  skyGrad.addColorStop(0, '#04070e');
-  skyGrad.addColorStop(1, '#1e1b4b');
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, canvas.width, horizonY);
-
-  // Full Moon over the Farm
-  ctx.fillStyle = '#fef3c7';
-  ctx.beginPath();
-  ctx.arc(centerX + 260, 75, 36, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Distant Wooden Barn Silhouette
-  ctx.fillStyle = '#1c1917';
-  ctx.beginPath();
-  ctx.moveTo(centerX - 110, horizonY);
-  ctx.lineTo(centerX - 110, horizonY - 55);
-  ctx.lineTo(centerX - 75, horizonY - 90);
-  ctx.lineTo(centerX, horizonY - 110);
-  ctx.lineTo(centerX + 75, horizonY - 90);
-  ctx.lineTo(centerX + 110, horizonY - 55);
-  ctx.lineTo(centerX + 110, horizonY);
-  ctx.closePath();
-  ctx.fill();
-
-  // Glowing Barn Window
-  ctx.fillStyle = '#f59e0b';
-  ctx.fillRect(centerX - 16, horizonY - 75, 32, 24);
-
-  // 3D Perspective Pasture Ground
-  const groundGrad = ctx.createLinearGradient(0, horizonY, 0, canvas.height);
-  groundGrad.addColorStop(0, '#0f1f17');
-  groundGrad.addColorStop(0.5, '#1a3326');
-  groundGrad.addColorStop(1, '#09120e');
-  ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, horizonY, canvas.width, canvas.height - horizonY);
-
-  // Perspective 3D Lane Grid Lines
-  ctx.strokeStyle = 'rgba(148, 163, 184, 0.16)';
-  ctx.lineWidth = 2;
-  for (let laneEdge = -1.5; laneEdge <= 1.5; laneEdge += 1) {
-    ctx.beginPath();
-    ctx.moveTo(centerX + laneEdge * 45, horizonY);
-    ctx.lineTo(canvas.width / 2 + (laneEdge - povWolf.visualLane * 0.35) * 340, canvas.height);
-    ctx.stroke();
-  }
-
-  // Sort 3D Sheep & Farmers by depth (Z)
-  const renderList = [];
-  povSheep.forEach(s => {
-    if (s.alive) renderList.push({ z: s.z, type: 'SHEEP', obj: s });
-  });
-  povEnemies.forEach(f => {
-    renderList.push({ z: f.z, type: 'FARMER', obj: f });
-  });
-  renderList.sort((a, b) => a.z - b.z);
-
-  renderList.forEach(item => {
-    if (item.type === 'SHEEP') draw3DSheep(item.obj, horizonY, centerX);
-    else draw3DFarmer(item.obj, horizonY, centerX, zoomOffset);
-  });
-
-  // Draw Slash Trails
-  slashTrails.forEach(t => {
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, t.life * 3);
-    ctx.strokeStyle = t.color;
-    ctx.lineWidth = 9;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(t.x1, t.y1);
-    ctx.lineTo(t.x2, t.y2);
-    ctx.stroke();
-    ctx.restore();
-  });
-
-  // Draw First-Person / Over-the-Shoulder 3D Wolf Head, Fangs & Front Claws
-  drawFirstPersonWolfOverlay();
-}
-
-function draw3DSheep(s, horizonY, centerX) {
-  const scale = 0.35 + s.z * 0.85;
-  const relLane = s.lane - povWolf.visualLane * 0.45;
-  const screenX = centerX + relLane * (280 * scale);
-  const screenY = horizonY + s.z * 230 + Math.abs(Math.sin(s.hopPhase)) * 8;
-
-  ctx.save();
-  ctx.translate(screenX, screenY);
-  ctx.scale(scale, scale);
-
-  // Fluffy Wool Body facing player
-  ctx.fillStyle = '#e2e8f0';
-  ctx.beginPath();
-  ctx.arc(0, -28, 26, 0, Math.PI * 2);
-  ctx.arc(-18, -24, 18, 0, Math.PI * 2);
-  ctx.arc(18, -24, 18, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Head
-  ctx.fillStyle = '#1e293b';
-  ctx.beginPath();
-  ctx.ellipse(0, -32, 12, 15, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Prompt if in wolf's current lane
-  if (s.lane === povWolf.lane) {
-    ctx.fillStyle = '#22c55e';
-    ctx.font = '900 13px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('BITE TO EAT (+20 HP)', 0, -68);
-  }
-  ctx.restore();
-}
-
-function draw3DFarmer(f, horizonY, centerX, zoomOffset) {
-  const scale = 0.35 + f.z * 0.95 + zoomOffset * 0.004;
-  const relLane = f.visualLane - povWolf.visualLane * 0.5;
-  const screenX = canvas.width / 2 + relLane * 260;
-  const screenY = horizonY + f.z * 255;
-
-  ctx.save();
-  ctx.translate(screenX, screenY);
-  ctx.scale(scale, scale);
-
-  const bob = Math.sin(f.walkPhase) * 5;
-
-  // Red Ground Danger Zone when Farmer is Winding Up an Attack!
-  if (f.state === 'WINDUP') {
-    ctx.fillStyle = 'rgba(239, 68, 68, 0.38)';
-    ctx.beginPath();
-    ctx.ellipse(0, 8, 72, 22, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#fef08a';
-    ctx.font = '900 18px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('⚠️ DODGE OR POUNCE!', 0, -175);
-  } else if (f.state === 'STUNNED') {
-    ctx.fillStyle = '#38bdf8';
-    ctx.font = '900 16px Segoe UI';
-    ctx.textAlign = 'center';
-    ctx.fillText('💫 STUNNED!', 0, -170);
-  }
-
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.beginPath();
-  ctx.ellipse(0, 4, 42, 12, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.translate(0, bob);
-
-  // Farmer HP Bar
-  ctx.fillStyle = 'rgba(0,0,0,0.8)';
-  ctx.fillRect(-38, -155, 76, 9);
-  ctx.fillStyle = f.state === 'STUNNED' ? '#38bdf8' : '#ef4444';
-  ctx.fillRect(-36, -153, 72 * Math.max(0, f.hp / f.maxHp), 5);
-
-  // Boots & Legs
-  ctx.fillStyle = '#1e3a8a';
-  ctx.fillRect(-20, -55, 15, 55);
-  ctx.fillRect(5, -55, 15, 55);
-
-  // Torso (Flannel Shirt & Denim Overalls facing the Wolf)
-  ctx.fillStyle = f.hurtTimer > 0 ? '#fca5a5' : (f.type === 'CLUB' ? '#7f1d1d' : '#b45309');
-  ctx.beginPath();
-  ctx.roundRect(-32, -112, 64, 62, 10);
-  ctx.fill();
-
-  ctx.fillStyle = '#1d4ed8';
-  ctx.fillRect(-22, -92, 44, 42);
-
-  // Head & Angry Face looking straight at the Wolf
-  ctx.fillStyle = '#fed7aa';
-  ctx.beginPath();
-  ctx.arc(0, -126, 16, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Angry Eyebrows & Eyes
-  ctx.strokeStyle = '#1c1917';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(-9, -131); ctx.lineTo(-3, -128);
-  ctx.moveTo(9, -131);  ctx.lineTo(3, -128);
-  ctx.stroke();
-
-  // Wide Brim Straw Hat
-  ctx.fillStyle = '#eab308';
-  ctx.beginPath();
-  ctx.ellipse(0, -138, 30, 7, 0, 0, Math.PI * 2);
-  ctx.fillRect(-16, -149, 32, 12);
-  ctx.fill();
-
-  // Weapon (Pitchfork / Heavy Club / Torch)
-  ctx.save();
-  const strikeScale = f.state === 'STRIKE' ? 1.45 : (f.state === 'WINDUP' ? 0.85 : 1);
-  const weaponRaise = f.state === 'WINDUP' ? -28 : (f.state === 'STRIKE' ? 24 : 0);
-  ctx.translate(34, -85 + weaponRaise);
-  ctx.scale(strikeScale, strikeScale);
-
-  // Wooden Handle
-  ctx.strokeStyle = '#78350f';
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(0, 35);
-  ctx.lineTo(-8, -45);
-  ctx.stroke();
-
-  if (f.type === 'PITCHFORK') {
-    // 3 Steel Prongs pointed at camera
-    ctx.strokeStyle = '#e2e8f0';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(-20, -45); ctx.lineTo(4, -45);
-    ctx.moveTo(-20, -45); ctx.lineTo(-22, -70);
-    ctx.moveTo(-8, -45);  ctx.lineTo(-8, -74);
-    ctx.moveTo(4, -45);   ctx.lineTo(6, -70);
-    ctx.stroke();
-  } else if (f.type === 'CLUB') {
-    ctx.fillStyle = '#451a03';
-    ctx.beginPath();
-    ctx.ellipse(-8, -58, 14, 24, 0, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    // Flaming Torch
-    ctx.fillStyle = '#f97316';
-    ctx.beginPath();
-    ctx.arc(-8, -56, 15, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath();
-    ctx.arc(-8, -54, 8, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.restore();
-  ctx.restore();
-}
-
-function drawFirstPersonWolfOverlay() {
-  ctx.save();
-  const breath = Math.sin(povWolf.breathCycle) * 5;
-  const lungeY = -povWolf.pounceZoom * 65 - povWolf.jawSnap * 35;
-  const guardY = povWolf.bracing ? 25 : 0;
-
-  // Target Reticle in center of wolf's current lane
-  const reticleX = canvas.width / 2 + (povWolf.lane - povWolf.visualLane) * 180;
-  ctx.strokeStyle = 'rgba(251, 191, 36, 0.55)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(reticleX, 275, 28, 0, Math.PI * 2);
-  ctx.moveTo(reticleX - 36, 275); ctx.lineTo(reticleX - 18, 275);
-  ctx.moveTo(reticleX + 18, 275); ctx.lineTo(reticleX + 36, 275);
-  ctx.stroke();
-
-  // Left Wolf Foreleg & Razor Claws
-  ctx.save();
-  const leftSwipeX = povWolf.leftClawSwipe * 160;
-  const leftSwipeY = -povWolf.leftClawSwipe * 130;
-  ctx.translate(250 + leftSwipeX, canvas.height - 30 + breath + leftSwipeY + lungeY + guardY);
-  ctx.rotate(0.25 + povWolf.leftClawSwipe * 0.45);
-
-  // Fur Arm
-  ctx.fillStyle = '#374151';
-  ctx.beginPath();
-  ctx.roundRect(-38, -95, 76, 140, 30);
-  ctx.fill();
-
-  // Sharp White Claws
-  ctx.fillStyle = '#f8fafc';
-  [-22, -7, 8, 23].forEach(cx => {
-    ctx.beginPath();
-    ctx.moveTo(cx - 5, -90);
-    ctx.lineTo(cx, -122);
-    ctx.lineTo(cx + 5, -90);
-    ctx.fill();
-  });
-  ctx.restore();
-
-  // Right Wolf Foreleg & Razor Claws
-  ctx.save();
-  const rightSwipeX = -povWolf.rightClawSwipe * 160;
-  const rightSwipeY = -povWolf.rightClawSwipe * 130;
-  ctx.translate(canvas.width - 250 + rightSwipeX, canvas.height - 30 + breath + rightSwipeY + lungeY + guardY);
-  ctx.rotate(-0.25 - povWolf.rightClawSwipe * 0.45);
-
-  ctx.fillStyle = '#374151';
-  ctx.beginPath();
-  ctx.roundRect(-38, -95, 76, 140, 30);
-  ctx.fill();
-
-  ctx.fillStyle = '#f8fafc';
-  [-22, -7, 8, 23].forEach(cx => {
-    ctx.beginPath();
-    ctx.moveTo(cx - 5, -90);
-    ctx.lineTo(cx, -122);
-    ctx.lineTo(cx + 5, -90);
-    ctx.fill();
-  });
-  ctx.restore();
-
-  // First-Person Wolf Snout & Snarling Fangs at Bottom Center
-  ctx.save();
-  ctx.translate(canvas.width / 2, canvas.height + 10 + breath + lungeY + guardY);
-
-  // Snout Bridge
-  ctx.fillStyle = '#1f2937';
-  ctx.beginPath();
-  ctx.moveTo(-85, 0);
-  ctx.lineTo(-48, -95);
-  ctx.lineTo(48, -95);
-  ctx.lineTo(85, 0);
-  ctx.closePath();
-  ctx.fill();
-
-  // Snarling Upper & Lower Fangs when Biting/Pouncing
-  if (povWolf.jawSnap > 0.08) {
-    const snapOpen = povWolf.jawSnap * 55;
-    ctx.fillStyle = '#991b1b';
-    ctx.beginPath();
-    ctx.ellipse(0, -85 - snapOpen * 0.5, 58, 28 + snapOpen * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Canine Fangs
-    ctx.fillStyle = '#ffffff';
-    ctx.beginPath();
-    ctx.moveTo(-42, -95 - snapOpen); ctx.lineTo(-34, -62 - snapOpen * 0.5); ctx.lineTo(-26, -95 - snapOpen);
-    ctx.moveTo(42, -95 - snapOpen);  ctx.lineTo(34, -62 - snapOpen * 0.5);  ctx.lineTo(26, -95 - snapOpen);
-    ctx.fill();
-  }
-
-  // Black Wolf Nose Tip
-  ctx.fillStyle = '#090d16';
-  ctx.beginPath();
-  ctx.ellipse(0, -95, 22, 13, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-  ctx.restore();
-}
-
-// ==========================================
-// RUNNER UPDATE & RENDER
-// ==========================================
 function checkOverlap(a, b) {
   return (
     a.x < b.x + b.width &&
@@ -1409,38 +735,56 @@ function checkOverlap(a, b) {
   );
 }
 
-function updateRunnerPhase(dt) {
-  wolf.updateRunner(dt);
-  gameSpeed = Math.min(680, gameSpeed + dt * 6.5);
-  distanceToRaid -= (gameSpeed * dt) * 0.045;
+function updateHUD() {
+  const pct = Math.max(0, Math.ceil((wolf.hp / wolf.maxHp) * 100));
+  hpFill.style.width = `${pct}%`;
+  hpTrail.style.width = `${pct}%`;
+  hpText.textContent = `${pct}%`;
+  scoreDisplay.textContent = skillScore;
+  streakDisplay.textContent = `STREAK MULTIPLIER: x${multiplier} (${streak} CLEAN)`;
+}
 
-  if (distanceToRaid <= 0) {
-    start3DPovCombat();
-    return;
-  }
+function updateGame(dt) {
+  wolf.update(dt);
+  gameSpeed = Math.min(720, gameSpeed + dt * 5.5);
 
+  // Parallax updates
   mountains.forEach(m => {
-    m.x -= gameSpeed * 0.12 * dt;
-    if (m.x + m.w < -40) m.x = canvas.width + 60;
+    m.x -= gameSpeed * 0.1 * dt;
+    if (m.x + m.w < -50) m.x = canvas.width + 60;
   });
-  bgTrees.forEach(t => {
-    t.x -= gameSpeed * 0.38 * dt;
-    if (t.x < -60) t.x = canvas.width + 40;
+  farTrees.forEach(t => {
+    t.x -= gameSpeed * 0.25 * dt;
+    if (t.x < -50) t.x = canvas.width + 30;
+  });
+  midTrees.forEach(t => {
+    t.x -= gameSpeed * 0.48 * dt;
+    if (t.x < -70) t.x = canvas.width + 50;
+  });
+  grassBlades.forEach(g => {
+    g.x -= gameSpeed * dt;
+    if (g.x < -20) g.x = canvas.width + 15;
+  });
+  fireflies.forEach(f => {
+    f.x -= gameSpeed * f.speed * dt;
+    f.phase += dt * 3;
+    if (f.x < -20) f.x = canvas.width + 20;
   });
 
+  // Obstacles
   spawnObsTimer -= dt;
   if (spawnObsTimer <= 0) {
     spawnObstacle();
-    spawnObsTimer = Math.max(0.66, 1.42 - gameSpeed * 0.0009 + Math.random() * 0.55);
+    spawnObsTimer = Math.max(0.65, 1.45 - gameSpeed * 0.00085 + Math.random() * 0.55);
   }
 
   const wolfBox = wolf.getHitbox();
 
   for (let i = obstacles.length - 1; i >= 0; i--) {
     const obs = obstacles[i];
-    const mult = obs.type === 'EAGLE' ? 1.25 : 1;
-    obs.x -= gameSpeed * mult * dt;
-    if (obs.type === 'EAGLE') obs.wingPhase += dt * 12;
+    const speedMult = obs.type === 'EAGLE' ? 1.26 : 1;
+    obs.x -= gameSpeed * speedMult * dt;
+    if (obs.type === 'EAGLE') obs.wingPhase += dt * 11;
 
     const obsBox = {
       x: obs.x + 6,
@@ -1449,55 +793,50 @@ function updateRunnerPhase(dt) {
       height: obs.height - 8
     };
 
-    // Smash wooden fence if lunging
-    if (obs.type === 'FENCE' && wolf.lungeTimer > 0) {
-      const lungeBox = { x: wolf.x + 20, y: wolf.y - 50, width: 85, height: 55 };
-      if (checkOverlap(lungeBox, obsBox)) {
-        createParticles(obs.x + 15, obs.y - 25, '#b45309', 24);
-        addScore(3, 'FENCE SMASH!', obs.x, obs.y - 45, '#fbbf24');
-        screenShake = 7;
-        obstacles.splice(i, 1);
-        continue;
-      }
-    }
-
     if (checkOverlap(wolfBox, obsBox)) {
       wolf.takeDamage(obs.damage);
       obstacles.splice(i, 1);
       continue;
     }
 
-    // Skill-based Near-Miss Scoring
+    // Skill-Based Scoring: Evaluate how closely & cleanly the player cleared the obstacle
     if (!obs.passed && obs.x + obs.width < wolf.x) {
       obs.passed = true;
-      const vertDist = Math.abs((wolf.y - 20) - (obs.y - obs.height / 2));
-      if (vertDist < 56) {
-        addScore(2, 'CLOSE DODGE!', wolf.x + 30, wolf.y - 45, '#38bdf8');
+      const crouchDuckBonus = (obs.type === 'OVERHANG_LOG' || obs.type === 'EAGLE') && wolf.crouching;
+      const verticalClearance = Math.abs((wolfBox.y + wolfBox.height / 2) - (obsBox.y + obsBox.height / 2));
+
+      if (crouchDuckBonus) {
+        addSkillPoints(2, 'LOW SLIDE!', wolf.x + 30, wolf.y - 48, '#fbbf24');
+      } else if (verticalClearance < 54) {
+        addSkillPoints(2, 'RAZOR DODGE!', wolf.x + 30, wolf.y - 48, '#f59e0b');
       } else {
-        addScore(1, 'CLEAN EVADE', wolf.x + 30, wolf.y - 45, '#a3e635');
+        addSkillPoints(1, 'CLEAN EVADE', wolf.x + 30, wolf.y - 48, '#a3e635');
       }
     }
 
-    if (obs.x + obs.width < -80) obstacles.splice(i, 1);
+    if (obs.x + obs.width < -90) {
+      obstacles.splice(i, 1);
+    }
   }
 
+  // Venison Meat Pickups
   spawnFoodTimer -= dt;
   if (spawnFoodTimer <= 0) {
     spawnFood();
-    spawnFoodTimer = 2.2 + Math.random() * 1.6;
+    spawnFoodTimer = 2.4 + Math.random() * 1.8;
   }
 
   for (let i = foods.length - 1; i >= 0; i--) {
     const f = foods[i];
     f.x -= gameSpeed * dt;
-    f.phase += dt * 5;
-    f.y = f.baseY + Math.sin(f.phase) * 6;
+    f.phase += dt * 4.5;
+    f.y = f.baseY + Math.sin(f.phase) * 5;
 
     const foodBox = { x: f.x - f.radius, y: f.y - f.radius, width: f.radius * 2, height: f.radius * 2 };
     if (checkOverlap(wolfBox, foodBox)) {
-      wolf.heal(14);
-      addScore(2, 'PREY MEAT', f.x, f.y - 20, '#fbbf24');
-      createParticles(f.x, f.y, '#f59e0b', 14);
+      wolf.heal(16);
+      addSkillPoints(3, 'FRESH VENISON', f.x, f.y - 18, '#fbbf24');
+      createParticles(f.x, f.y, '#dc2626', 14, 180);
       foods.splice(i, 1);
       continue;
     }
@@ -1505,159 +844,316 @@ function updateRunnerPhase(dt) {
   }
 }
 
-function drawRunnerScene() {
+// Realistic Rendering Functions
+function drawPineSilhouette(x, bottomY, w, h, color) {
+  ctx.fillStyle = color;
+  for (let tier = 0; tier < 3; tier++) {
+    const topY = bottomY - h + tier * (h * 0.22);
+    const baseTierY = bottomY - (2 - tier) * (h * 0.22);
+    const tierW = w * (0.55 + tier * 0.24);
+    ctx.beginPath();
+    ctx.moveTo(x, topY);
+    ctx.lineTo(x - tierW / 2, baseTierY);
+    ctx.lineTo(x + tierW / 2, baseTierY);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+function drawEnvironment() {
+  // Deep Realistic Night Sky
   const skyGrad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
-  skyGrad.addColorStop(0, '#04070e');
-  skyGrad.addColorStop(0.55, '#0d192b');
-  skyGrad.addColorStop(1, '#1e293b');
+  skyGrad.addColorStop(0, '#04060a');
+  skyGrad.addColorStop(0.55, '#0b131e');
+  skyGrad.addColorStop(1, '#162432');
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, canvas.width, GROUND_Y);
 
-  ctx.fillStyle = '#fff';
+  // Stars
   stars.forEach(s => {
+    ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
     ctx.fill();
   });
 
-  ctx.fillStyle = '#fef3c7';
+  // Detailed Cratered Full Moon & Atmospheric Glow
+  const moonX = 810, moonY = 88;
+  const moonHalo = ctx.createRadialGradient(moonX, moonY, 32, moonX, moonY, 130);
+  moonHalo.addColorStop(0, 'rgba(254, 249, 195, 0.28)');
+  moonHalo.addColorStop(1, 'rgba(254, 249, 195, 0)');
+  ctx.fillStyle = moonHalo;
   ctx.beginPath();
-  ctx.arc(820, 85, 36, 0, Math.PI * 2);
+  ctx.arc(moonX, moonY, 130, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.fillStyle = '#fefce8';
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, 38, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = 'rgba(202, 194, 165, 0.4)';
+  ctx.beginPath();
+  ctx.arc(moonX - 12, moonY - 8, 8, 0, Math.PI * 2);
+  ctx.arc(moonX + 14, moonY + 9, 11, 0, Math.PI * 2);
+  ctx.arc(moonX + 5, moonY - 17, 5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Distant Mountain Range
   mountains.forEach(m => {
-    ctx.fillStyle = '#0f172a';
+    ctx.fillStyle = '#0c1520';
     ctx.beginPath();
     ctx.moveTo(m.x, GROUND_Y);
-    ctx.lineTo(m.x + m.w * 0.5, GROUND_Y - m.h);
+    ctx.lineTo(m.x + m.w * 0.48, GROUND_Y - m.h);
     ctx.lineTo(m.x + m.w, GROUND_Y);
     ctx.closePath();
     ctx.fill();
-  });
 
-  ctx.fillStyle = '#09111e';
-  bgTrees.forEach(t => {
+    // Subtle Moonlit Snow Ridge
+    ctx.fillStyle = 'rgba(226, 232, 240, 0.09)';
     ctx.beginPath();
-    ctx.moveTo(t.x, GROUND_Y);
-    ctx.lineTo(t.x + t.w / 2, GROUND_Y - t.h);
-    ctx.lineTo(t.x + t.w, GROUND_Y);
+    ctx.moveTo(m.x + m.w * 0.48, GROUND_Y - m.h);
+    ctx.lineTo(m.x + m.w * 0.36, GROUND_Y - m.h * 0.72);
+    ctx.lineTo(m.x + m.w * 0.56, GROUND_Y - m.h * 0.75);
     ctx.closePath();
     ctx.fill();
   });
 
-  ctx.fillStyle = '#14261c';
-  ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
-  ctx.fillStyle = '#2d4a43';
-  ctx.fillRect(0, GROUND_Y, canvas.width, 5);
+  // Far Forest Layer
+  farTrees.forEach(t => drawPineSilhouette(t.x, GROUND_Y, t.w, t.h, '#091119'));
 
-  // Draw Obstacles
-  obstacles.forEach(obs => {
-    ctx.save();
-    ctx.translate(obs.x, obs.y);
-    if (obs.type === 'TRAP') {
-      ctx.fillStyle = '#64748b';
-      ctx.fillRect(0, -6, obs.width, 6);
-      ctx.fillStyle = '#cbd5e1';
-      for (let tx = 4; tx < obs.width - 4; tx += 8) {
-        ctx.beginPath();
-        ctx.moveTo(tx, -6); ctx.lineTo(tx + 4, -18); ctx.lineTo(tx + 8, -6);
-        ctx.fill();
-      }
-    } else if (obs.type === 'FENCE') {
-      ctx.fillStyle = '#78350f';
-      ctx.fillRect(4, -obs.height, 8, obs.height);
-      ctx.fillRect(obs.width - 12, -obs.height, 8, obs.height);
-      ctx.fillStyle = '#b45309';
-      ctx.fillRect(0, -obs.height + 10, obs.width, 10);
-      ctx.fillRect(0, -obs.height + 32, obs.width, 10);
-    } else if (obs.type === 'ROCK') {
-      ctx.fillStyle = '#334155';
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo(10, -obs.height);
-      ctx.lineTo(obs.width * 0.75, -obs.height * 0.85);
-      ctx.lineTo(obs.width, 0);
-      ctx.closePath();
-      ctx.fill();
-    } else if (obs.type === 'EAGLE') {
-      const flap = Math.sin(obs.wingPhase) * 22;
-      ctx.translate(obs.width / 2, -obs.height / 2);
-      ctx.fillStyle = '#451a03';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 20, 8, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#f8fafc';
-      ctx.beginPath();
-      ctx.arc(-18, 0, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#f59e0b';
-      ctx.beginPath();
-      ctx.moveTo(-24, -2); ctx.lineTo(-32, 3); ctx.lineTo(-23, 4);
-      ctx.fill();
-      ctx.strokeStyle = '#78350f';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(-4, 0); ctx.lineTo(12, flap);
-      ctx.stroke();
-    }
-    ctx.restore();
-  });
+  // Low Woodland Fog
+  const fogGrad = ctx.createLinearGradient(0, GROUND_Y - 70, 0, GROUND_Y);
+  fogGrad.addColorStop(0, 'rgba(22, 36, 50, 0)');
+  fogGrad.addColorStop(1, 'rgba(148, 163, 184, 0.12)');
+  ctx.fillStyle = fogGrad;
+  ctx.fillRect(0, GROUND_Y - 70, canvas.width, 70);
 
-  // Draw Steaks
-  foods.forEach(f => {
-    ctx.save();
-    ctx.translate(f.x, f.y);
-    ctx.fillStyle = '#dc2626';
+  // Midground Forest Layer
+  midTrees.forEach(t => drawPineSilhouette(t.x, GROUND_Y, t.w, t.h, '#050a0f'));
+
+  // Golden Fireflies / Forest Spores
+  fireflies.forEach(f => {
+    const glowAlpha = (Math.sin(f.phase) + 1) * 0.35;
+    ctx.fillStyle = `rgba(253, 224, 71, ${glowAlpha})`;
     ctx.beginPath();
-    ctx.ellipse(0, 0, 13, 9, -0.2, 0, Math.PI * 2);
+    ctx.arc(f.x, f.y + Math.sin(f.phase) * 6, 2.2, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#fef3c7';
-    ctx.fillRect(-16, -2, 8, 4);
-    ctx.restore();
   });
 
-  wolf.drawSideView();
+  // Rich Earth & Pine-Needle Ground
+  const groundGrad = ctx.createLinearGradient(0, GROUND_Y, 0, canvas.height);
+  groundGrad.addColorStop(0, '#1a241e');
+  groundGrad.addColorStop(0.2, '#121814');
+  groundGrad.addColorStop(1, '#060807');
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, GROUND_Y, canvas.width, canvas.height - GROUND_Y);
+
+  ctx.fillStyle = '#26382e';
+  ctx.fillRect(0, GROUND_Y, canvas.width, 4);
+
+  ctx.strokeStyle = '#2f4739';
+  ctx.lineWidth = 2;
+  grassBlades.forEach(g => {
+    ctx.beginPath();
+    ctx.moveTo(g.x, GROUND_Y + 2);
+    ctx.lineTo(g.x - 3, GROUND_Y - g.h);
+    ctx.moveTo(g.x + 5, GROUND_Y + 2);
+    ctx.lineTo(g.x + 8, GROUND_Y - g.h * 0.8);
+    ctx.stroke();
+  });
 }
 
-function updateHUD() {
-  const hpPct = Math.max(0, (wolf.hp / wolf.maxHp) * 100);
-  hpFill.style.width = `${hpPct}%`;
-  hpDamageFill.style.width = `${hpPct}%`;
-  hpText.textContent = `${Math.ceil(wolf.hp)} / ${wolf.maxHp}`;
-  staminaFill.style.width = `${(wolf.stamina / wolf.maxStamina) * 100}%`;
-  rageFill.style.width = `${wolf.rage}%`;
-  scoreDisplay.textContent = skillScore;
+function drawObstacle(obs) {
+  ctx.save();
+  ctx.translate(obs.x, obs.y);
 
-  if (gameState === 'RUNNER') {
-    phaseDisplay.textContent = `NEXT PASTURE RAID: ${Math.max(0, Math.ceil(distanceToRaid))}m`;
-  } else if (gameState === 'POV_COMBAT') {
-    phaseDisplay.textContent = `FARMERS REMAINING: ${povEnemies.length}`;
+  if (obs.type === 'TRAP') {
+    // Rusted Iron Bear Trap with Steel Teeth
+    ctx.fillStyle = '#3f3f46';
+    ctx.fillRect(0, -6, obs.width, 6);
+    ctx.fillStyle = '#d4d4d8';
+    for (let tx = 4; tx < obs.width - 4; tx += 7) {
+      ctx.beginPath();
+      ctx.moveTo(tx, -6);
+      ctx.lineTo(tx + 3.5, -18);
+      ctx.lineTo(tx + 7, -6);
+      ctx.fill();
+    }
+    ctx.fillStyle = '#7f1d1d';
+    ctx.beginPath();
+    ctx.arc(obs.width / 2, -6, 5, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (obs.type === 'OVERHANG_LOG') {
+    // Suspended Fallen Tree Trunk (Supported by broken branches so wolf can crouch-slide underneath)
+    ctx.fillStyle = '#291d12';
+    ctx.fillRect(8, -4, 7, 36);
+    ctx.fillRect(obs.width - 15, -4, 7, 36);
+
+    const barkGrad = ctx.createLinearGradient(0, -obs.height, 0, 0);
+    barkGrad.addColorStop(0, '#5c4028');
+    barkGrad.addColorStop(0.6, '#3d2817');
+    barkGrad.addColorStop(1, '#24170d');
+    ctx.fillStyle = barkGrad;
+    ctx.beginPath();
+    ctx.roundRect(0, -obs.height, obs.width, obs.height, 8);
+    ctx.fill();
+
+    // Moss along top of log
+    ctx.fillStyle = '#365314';
+    ctx.beginPath();
+    ctx.roundRect(6, -obs.height, obs.width - 12, 7, 4);
+    ctx.fill();
+
+    // Cut wood rings on end
+    ctx.fillStyle = '#a16207';
+    ctx.beginPath();
+    ctx.ellipse(4, -obs.height / 2, 4, obs.height / 2 - 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (obs.type === 'BOULDER') {
+    // Faceted Granite Boulder with Forest Moss
+    ctx.fillStyle = '#334155';
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(6, -obs.height * 0.68);
+    ctx.lineTo(obs.width * 0.35, -obs.height);
+    ctx.lineTo(obs.width * 0.78, -obs.height * 0.86);
+    ctx.lineTo(obs.width, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#475569';
+    ctx.beginPath();
+    ctx.moveTo(6, -obs.height * 0.68);
+    ctx.lineTo(obs.width * 0.35, -obs.height);
+    ctx.lineTo(obs.width * 0.48, -obs.height * 0.45);
+    ctx.lineTo(obs.width * 0.2, 0);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#365314';
+    ctx.beginPath();
+    ctx.ellipse(obs.width * 0.45, -obs.height * 0.88, 16, 5, 0.1, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (obs.type === 'EAGLE') {
+    // Realistic Hunting Bald Eagle
+    const flap = Math.sin(obs.wingPhase);
+    const centerY = -obs.height / 2 + flap * 4;
+    ctx.translate(obs.width / 2, centerY);
+
+    // Far Wing
+    ctx.fillStyle = '#29180e';
+    ctx.beginPath();
+    ctx.moveTo(-4, -2);
+    ctx.quadraticCurveTo(8, -26 * flap - 6, 24, -22 * flap - 10);
+    ctx.lineTo(14, -2);
+    ctx.closePath();
+    ctx.fill();
+
+    // White Tail Feathers
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(16, -3);
+    ctx.lineTo(34, -8);
+    ctx.lineTo(35, 0);
+    ctx.lineTo(32, 6);
+    ctx.lineTo(16, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Dark Plumage Body
+    ctx.fillStyle = '#3d2516';
+    ctx.beginPath();
+    ctx.ellipse(2, 1, 20, 8.5, -0.06, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Yellow Talons
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-3, 8); ctx.lineTo(-9, 14);
+    ctx.moveTo(3, 8);  ctx.lineTo(-3, 14);
+    ctx.stroke();
+
+    // White Feathered Head
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.arc(-17, 0, 7.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hooked Golden Raptor Beak
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(-23, -3);
+    ctx.quadraticCurveTo(-34, -2, -31, 5);
+    ctx.lineTo(-22, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Near Wing with Primary Feathers
+    const wingY = 26 * flap;
+    ctx.fillStyle = '#52321d';
+    ctx.beginPath();
+    ctx.moveTo(-8, 0);
+    ctx.quadraticCurveTo(4, wingY * 0.7, 22, wingY);
+    ctx.lineTo(27, wingY * 0.8);
+    ctx.lineTo(19, wingY * 0.6);
+    ctx.lineTo(24, wingY * 0.45);
+    ctx.lineTo(8, 4);
+    ctx.closePath();
+    ctx.fill();
   }
+
+  ctx.restore();
+}
+
+function drawFood(f) {
+  ctx.save();
+  ctx.translate(f.x, f.y);
+  ctx.rotate(-0.22);
+
+  // Bone Handle
+  ctx.fillStyle = '#f5f5f4';
+  ctx.fillRect(-17, -2.5, 12, 5);
+  ctx.beginPath();
+  ctx.arc(-17, -3, 3.5, 0, Math.PI * 2);
+  ctx.arc(-17, 3, 3.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Outer Fat & Marbled Venison Steak
+  ctx.fillStyle = '#fecdd3';
+  ctx.beginPath();
+  ctx.ellipse(2, 0, 13, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = '#991b1b';
+  ctx.beginPath();
+  ctx.ellipse(1, 0, 10.5, 7.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#f5f5f4';
+  ctx.lineWidth = 1.3;
+  ctx.beginPath();
+  ctx.arc(-2, -1, 2.5, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.restore();
 }
 
 function triggerGameOver() {
   gameState = 'GAMEOVER';
-  combatControls.classList.add('hidden');
-  modeBanner.style.opacity = '0';
-  overlayTitle.textContent = 'THE ALPHA HAS FALLEN';
-  guideGrid.innerHTML = `
-    <div class="guide-col" style="grid-column: span 2; text-align: center;">
-      <h3>FINAL HUNT REPORT</h3>
-      <p style="font-size: 20px; color: #f8fafc; margin-top: 8px;">
-        Total Skill Score: <strong style="color: #fbbf24;">${skillScore}</strong> &bull;
-        Farmer Ambush Waves Cleared: <strong style="color: #38bdf8;">${raidWave - 1}</strong>
-      </p>
-    </div>
-  `;
-  startBtn.textContent = 'HUNT AGAIN';
+  overlayTitle.textContent = 'The Run Has Ended';
+  overlayDesc.innerHTML = `Final Skill Score: <strong style="color:#fbbf24;">${skillScore}</strong>`;
+  startBtn.textContent = 'RUN AGAIN';
   overlay.classList.remove('hidden');
 }
 
 function resetGame() {
   wolf.reset();
   skillScore = 0;
-  raidWave = 1;
-  distanceToRaid = 450;
+  streak = 0;
+  multiplier = 1;
   gameSpeed = 430;
   obstacles = [];
   foods = [];
@@ -1665,10 +1161,7 @@ function resetGame() {
   popups = [];
   spawnObsTimer = 1.0;
   spawnFoodTimer = 1.8;
-  combatControls.classList.add('hidden');
-  runnerHint.classList.remove('hidden');
-  modeBanner.style.opacity = '0';
-  gameState = 'RUNNER';
+  gameState = 'PLAYING';
   updateHUD();
 }
 
@@ -1679,25 +1172,26 @@ function gameLoop(timestamp) {
   ctx.save();
   if (screenShake > 0) {
     ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
-    screenShake = Math.max(0, screenShake - dt * 32);
+    screenShake = Math.max(0, screenShake - dt * 30);
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  drawEnvironment();
 
-  if (gameState === 'RUNNER' || gameState === 'MENU' || gameState === 'GAMEOVER') {
-    if (gameState === 'RUNNER') updateRunnerPhase(dt);
-    drawRunnerScene();
-  } else if (gameState === 'POV_COMBAT') {
-    updatePovCombat(dt);
-    draw3DPovScene();
+  if (gameState === 'PLAYING') {
+    updateGame(dt);
   }
+
+  obstacles.forEach(drawObstacle);
+  foods.forEach(drawFood);
+  wolf.draw();
 
   // Particles
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     p.x += p.vx * dt;
     p.y += p.vy * dt;
-    p.life -= dt * 2.2;
+    p.life -= dt * 2.3;
     if (p.life <= 0) {
       particles.splice(i, 1);
       continue;
@@ -1710,7 +1204,7 @@ function gameLoop(timestamp) {
   }
   ctx.globalAlpha = 1;
 
-  // Floating Skill Score Popups
+  // Floating Skill Popups
   for (let i = popups.length - 1; i >= 0; i--) {
     const pop = popups[i];
     pop.y += pop.vy * dt;
@@ -1720,121 +1214,72 @@ function gameLoop(timestamp) {
       continue;
     }
     ctx.globalAlpha = Math.min(1, pop.life);
-    ctx.font = `900 ${pop.size}px Segoe UI`;
+    ctx.font = `800 ${pop.size}px Segoe UI`;
     ctx.fillStyle = pop.color;
     ctx.strokeStyle = '#000';
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 3;
     ctx.strokeText(pop.text, pop.x, pop.y);
     ctx.fillText(pop.text, pop.x, pop.y);
   }
   ctx.globalAlpha = 1;
 
-  // Red Damage Vignette Flash
-  if (redFlash > 0) {
-    ctx.fillStyle = `rgba(220, 38, 38, ${redFlash})`;
+  if (damageVignette > 0) {
+    ctx.fillStyle = `rgba(185, 28, 28, ${damageVignette})`;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    redFlash = Math.max(0, redFlash - dt * 1.5);
+    damageVignette = Math.max(0, damageVignette - dt * 1.6);
   }
 
   ctx.restore();
-  updateHUD();
   requestAnimationFrame(gameLoop);
 }
 
 // ==========================================
-// DIRECT SCREEN GESTURES (Runner) & COMBAT CONTROLS
+// TWO-BUTTON CONTROLLER (UP & DOWN) + KEYBOARD
 // ==========================================
-let pointerStartX = 0;
-let pointerStartY = 0;
-let gestureHandled = false;
-
-canvas.addEventListener('pointerdown', e => {
-  if (gameState === 'RUNNER') {
-    pointerStartX = e.clientX;
-    pointerStartY = e.clientY;
-    gestureHandled = false;
-
-    const rect = canvas.getBoundingClientRect();
-    const relY = (e.clientY - rect.top) / rect.height;
-
-    // Tapping the upper 75% of screen jumps immediately; holding bottom 25% crouches/dives
-    if (relY > 0.75) {
-      wolf.crouchStart();
-      gestureHandled = true;
-    } else {
-      wolf.jump();
-    }
-  } else if (gameState === 'POV_COMBAT') {
-    // Clicking directly on an enemy in 3D view bites them!
-    performPovAttack('BITE');
-  }
+btnUp.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  btnUp.classList.add('pressed');
+  wolf.leap();
 });
+const releaseUp = () => btnUp.classList.remove('pressed');
+btnUp.addEventListener('pointerup', releaseUp);
+btnUp.addEventListener('pointerleave', releaseUp);
+btnUp.addEventListener('pointercancel', releaseUp);
 
-canvas.addEventListener('pointermove', e => {
-  if (gameState !== 'RUNNER' || gestureHandled) return;
-  const dx = e.clientX - pointerStartX;
-  const dy = e.clientY - pointerStartY;
-
-  if (dy > 32) {
-    wolf.crouchStart();
-    gestureHandled = true;
-  } else if (dx > 38) {
-    wolf.runnerLunge();
-    gestureHandled = true;
-  }
+btnDown.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  btnDown.classList.add('pressed');
+  wolf.setCrouch(true);
 });
+const releaseDown = () => {
+  btnDown.classList.remove('pressed');
+  wolf.setCrouch(false);
+};
+btnDown.addEventListener('pointerup', releaseDown);
+btnDown.addEventListener('pointerleave', releaseDown);
+btnDown.addEventListener('pointercancel', releaseDown);
 
-window.addEventListener('pointerup', () => {
-  wolf.crouchEnd();
-  povWolf.bracing = false;
-});
-
-// Keyboard Controls (Works seamlessly in both Runner & 3D POV Combat)
+// Keyboard Support
 window.addEventListener('keydown', e => {
-  if (gameState === 'RUNNER') {
-    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-      e.preventDefault();
-      wolf.jump();
-    } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-      e.preventDefault();
-      wolf.crouchStart();
-    } else if (e.code === 'KeyF' || e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'ArrowRight' || e.code === 'KeyD') {
-      wolf.runnerLunge();
-    }
-  } else if (gameState === 'POV_COMBAT') {
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') povDodge(-1);
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') povDodge(1);
-    if (e.code === 'ArrowDown' || e.code === 'KeyS') povWolf.bracing = true;
-    if (e.code === 'KeyJ' || e.code === 'KeyF') performPovAttack('BITE');
-    if (e.code === 'KeyK') performPovAttack('CLAW');
-    if (e.code === 'KeyL' || e.code === 'ArrowUp' || e.code === 'KeyW') performPovAttack('POUNCE');
-    if (e.code === 'Space') {
-      e.preventDefault();
-      performPovAttack('HOWL');
-    }
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    e.preventDefault();
+    btnUp.classList.add('pressed');
+    wolf.leap();
+  } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+    e.preventDefault();
+    btnDown.classList.add('pressed');
+    wolf.setCrouch(true);
   }
 });
 
 window.addEventListener('keyup', e => {
-  if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-    wolf.crouchEnd();
-    povWolf.bracing = false;
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+    btnUp.classList.remove('pressed');
+  } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+    btnDown.classList.remove('pressed');
+    wolf.setCrouch(false);
   }
 });
-
-// Bind 3D Combat On-Screen Controller Buttons
-document.getElementById('btnDodgeLeft').addEventListener('pointerdown', e => { e.preventDefault(); povDodge(-1); });
-document.getElementById('btnDodgeRight').addEventListener('pointerdown', e => { e.preventDefault(); povDodge(1); });
-
-const btnGuard = document.getElementById('btnGuard');
-btnGuard.addEventListener('pointerdown', e => { e.preventDefault(); povWolf.bracing = true; });
-btnGuard.addEventListener('pointerup', () => { povWolf.bracing = false; });
-btnGuard.addEventListener('pointerleave', () => { povWolf.bracing = false; });
-
-document.getElementById('btnBite').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('BITE'); });
-document.getElementById('btnClaw').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('CLAW'); });
-document.getElementById('btnPounce').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('POUNCE'); });
-document.getElementById('btnHowl').addEventListener('pointerdown', e => { e.preventDefault(); performPovAttack('HOWL'); });
 
 startBtn.addEventListener('click', () => {
   overlay.classList.add('hidden');
