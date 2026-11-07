@@ -41,7 +41,6 @@
       border: 1.5px solid rgba(255, 255, 255, 0.12);
       background: #070a0f;
     }
-    /* Mobile full-fit modes respect browser address bar & bottom home bar */
     #gameContainer.portrait-mode,
     #gameContainer.landscape-fullscreen {
       max-width: 100%;
@@ -175,7 +174,7 @@
       border-color: #fbbf24;
     }
 
-    /* Sleek 2-Button Controller with Safe Bottom Margin (Never Cut Off) */
+    /* Sleek 2-Button Controller with Safe Bottom Margin */
     #controls {
       position: absolute;
       bottom: calc(18px + env(safe-area-inset-bottom, 12px));
@@ -244,8 +243,8 @@
       z-index: 15;
     }
     #overlay h1 {
-      font-size: clamp(24px, 5vw, 40px);
-      margin-bottom: 6px;
+      font-size: clamp(26px, 5vw, 42px);
+      margin-bottom: 8px;
       color: #f8fafc;
       text-transform: uppercase;
       letter-spacing: 2.5px;
@@ -255,59 +254,8 @@
       font-size: clamp(12px, 2.3vw, 14px);
       color: #cbd5e1;
       max-width: 520px;
-      line-height: 1.5;
-      margin-bottom: 14px;
-    }
-
-    /* Orientation Selector Card */
-    #orientationBox {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-bottom: 16px;
-      background: rgba(15, 23, 34, 0.75);
-      padding: 10px 16px;
-      border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.14);
-    }
-    .orient-title {
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1.4px;
-      color: #fbbf24;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-    .orient-options {
-      display: flex;
-      gap: 10px;
-    }
-    .orient-btn {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      padding: 8px 14px;
-      border-radius: 9px;
-      background: rgba(30, 41, 59, 0.7);
-      border: 1.5px solid rgba(148, 163, 184, 0.3);
-      color: #cbd5e1;
-      font-size: 12px;
-      font-weight: 800;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-    .orient-btn svg {
-      width: 16px;
-      height: 16px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2.2;
-    }
-    .orient-btn.active {
-      background: rgba(245, 158, 11, 0.22);
-      border-color: #fbbf24;
-      color: #fef3c7;
-      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+      line-height: 1.55;
+      margin-bottom: 22px;
     }
 
     .overlay-actions {
@@ -398,21 +346,6 @@
       Higher scores unlock <strong>11 realistic wilderness hazards</strong>.
     </p>
 
-    <!-- Screen Size / Orientation Selector -->
-    <div id="orientationBox">
-      <div class="orient-title" id="orientLabel">CHOOSE SCREEN MODE</div>
-      <div class="orient-options">
-        <button class="orient-btn active" id="btnLandscape" type="button">
-          <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/></svg>
-          LANDSCAPE
-        </button>
-        <button class="orient-btn" id="btnPortrait" type="button">
-          <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/></svg>
-          PORTRAIT
-        </button>
-      </div>
-    </div>
-
     <div class="overlay-actions">
       <button class="primary-btn" id="startBtn">BEGIN THE RUN</button>
       <button class="secondary-btn hidden" id="restartFromPauseBtn">RESTART</button>
@@ -439,18 +372,8 @@ const startBtn = document.getElementById('startBtn');
 const restartFromPauseBtn = document.getElementById('restartFromPauseBtn');
 const btnUp = document.getElementById('btnUp');
 const btnDown = document.getElementById('btnDown');
-const btnLandscape = document.getElementById('btnLandscape');
-const btnPortrait = document.getElementById('btnPortrait');
-const orientLabel = document.getElementById('orientLabel');
 
-const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 950);
-let screenMode = (isMobileDevice && window.innerHeight > window.innerWidth) ? 'PORTRAIT' : 'LANDSCAPE';
-let GROUND_Y = 395;
-
-if (isMobileDevice) {
-  orientLabel.textContent = 'PHONE DETECTED — CHOOSE SCREEN ORIENTATION';
-}
-
+let GROUND_Y = 385;
 let gameState = 'MENU'; // 'MENU', 'PLAYING', 'PAUSED', 'GAMEOVER'
 let lastTime = 0;
 
@@ -501,7 +424,7 @@ let spawnFoodTimer = 0;
 // HYPER-REALISTIC 4-LEGGED TIMBER WOLF
 // ======================================================
 const wolf = {
-  x: 145,
+  x: 135,
   y: GROUND_Y,
   vy: 0,
   gravity: 2200,
@@ -514,7 +437,8 @@ const wolf = {
   runCycle: 0,
 
   reset() {
-    this.x = screenMode === 'PORTRAIT' ? 68 : 135;
+    const isPortrait = window.innerHeight > window.innerWidth;
+    this.x = isPortrait ? 68 : 135;
     this.y = GROUND_Y;
     this.vy = 0;
     this.jumpsLeft = 2;
@@ -863,21 +787,20 @@ function rebuildEnvironmentLayers() {
   }));
 }
 
-// Responsive Screen Mode & Viewport Sync (Prevents Address Bar Cut-Off!)
-function syncViewportDimensions() {
+// Auto-Detect Orientation & Sync Viewport
+function autoDetectOrientationAndSync() {
   const vw = window.visualViewport ? window.visualViewport.width : window.innerWidth;
   const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
   document.body.style.height = `${vh}px`;
 
+  const isPortrait = vh > vw;
   const prevGround = GROUND_Y;
 
-  if (screenMode === 'PORTRAIT') {
+  if (isPortrait) {
     gameContainer.classList.add('portrait-mode');
     gameContainer.classList.remove('landscape-fullscreen');
     canvas.width = 500;
-    // Scale internal canvas height to match exact visible browser aspect ratio
     canvas.height = Math.max(720, Math.min(980, Math.round(500 * (vh / Math.max(1, vw)))));
-    // Keep GROUND_Y well above the bottom controller buttons so nothing is ever cut off
     GROUND_Y = canvas.height - 155;
     wolf.x = 68;
   } else {
@@ -889,12 +812,10 @@ function syncViewportDimensions() {
     }
     canvas.width = 1000;
     canvas.height = 500;
-    // Raised ground level so wolf, traps, and buttons sit safely above the mobile bottom bar
     GROUND_Y = 385;
     wolf.x = 135;
   }
 
-  // Adjust existing entities smoothly if resized mid-game
   const deltaY = GROUND_Y - prevGround;
   wolf.y = Math.min(GROUND_Y, wolf.y + deltaY);
   obstacles.forEach(obs => {
@@ -909,33 +830,12 @@ function syncViewportDimensions() {
   rebuildEnvironmentLayers();
 }
 
-function applyScreenMode(mode) {
-  screenMode = mode;
-  btnLandscape.classList.toggle('active', mode === 'LANDSCAPE');
-  btnPortrait.classList.toggle('active', mode === 'PORTRAIT');
-  syncViewportDimensions();
-}
-
-window.addEventListener('resize', syncViewportDimensions);
+window.addEventListener('resize', autoDetectOrientationAndSync);
 if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', syncViewportDimensions);
+  window.visualViewport.addEventListener('resize', autoDetectOrientationAndSync);
 }
 
-btnLandscape.addEventListener('click', () => {
-  applyScreenMode('LANDSCAPE');
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('landscape').catch(() => {});
-  }
-});
-
-btnPortrait.addEventListener('click', () => {
-  applyScreenMode('PORTRAIT');
-  if (screen.orientation && screen.orientation.lock) {
-    screen.orientation.lock('portrait').catch(() => {});
-  }
-});
-
-applyScreenMode(screenMode);
+autoDetectOrientationAndSync();
 
 // ======================================================
 // PAUSE & AUTO-PAUSE WHEN LEAVING BROWSER
@@ -972,7 +872,6 @@ pauseBtn.addEventListener('pointerdown', e => {
   }
 });
 
-// Auto-pause whenever user switches tabs, minimizes browser, or locks phone
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && gameState === 'PLAYING') {
     pauseGame('Auto-Paused');
@@ -1167,7 +1066,8 @@ function updateHUD() {
 
 function updateGame(dt) {
   wolf.update(dt);
-  const maxSpd = screenMode === 'PORTRAIT' ? 600 : 730;
+  const isPortrait = window.innerHeight > window.innerWidth;
+  const maxSpd = isPortrait ? 600 : 730;
   gameSpeed = Math.min(maxSpd, gameSpeed + dt * 5.0);
 
   if (screenBanner.active) {
@@ -1202,7 +1102,7 @@ function updateGame(dt) {
   spawnObsTimer -= dt;
   if (spawnObsTimer <= 0) {
     spawnObstacle();
-    const portraitGap = screenMode === 'PORTRAIT' ? 0.24 : 0;
+    const portraitGap = isPortrait ? 0.24 : 0;
     spawnObsTimer = Math.max(0.68 + portraitGap, 1.45 - gameSpeed * 0.0008 + Math.random() * 0.55);
   }
 
@@ -1392,474 +1292,4 @@ function drawObstacle(obs) {
     ctx.fill();
   } else if (obs.type === 'OVERHANG_LOG') {
     ctx.fillStyle = '#291d12';
-    ctx.fillRect(8, -4, 7, 36);
-    ctx.fillRect(obs.width - 15, -4, 7, 36);
-
-    const barkGrad = ctx.createLinearGradient(0, -obs.height, 0, 0);
-    barkGrad.addColorStop(0, '#5c4028');
-    barkGrad.addColorStop(0.6, '#3d2817');
-    barkGrad.addColorStop(1, '#24170d');
-    ctx.fillStyle = barkGrad;
-    ctx.beginPath();
-    ctx.roundRect(0, -obs.height, obs.width, obs.height, 8);
-    ctx.fill();
-
-    ctx.fillStyle = '#365314';
-    ctx.beginPath();
-    ctx.roundRect(6, -obs.height, obs.width - 12, 7, 4);
-    ctx.fill();
-  } else if (obs.type === 'BOULDER') {
-    ctx.fillStyle = '#334155';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(6, -obs.height * 0.68);
-    ctx.lineTo(obs.width * 0.35, -obs.height);
-    ctx.lineTo(obs.width * 0.78, -obs.height * 0.86);
-    ctx.lineTo(obs.width, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#365314';
-    ctx.beginPath();
-    ctx.ellipse(obs.width * 0.45, -obs.height * 0.88, 16, 5, 0.1, 0, Math.PI * 2);
-    ctx.fill();
-  } else if (obs.type === 'EAGLE') {
-    const flap = Math.sin(obs.wingPhase);
-    const centerY = -obs.height / 2 + flap * 4;
-    ctx.translate(obs.width / 2, centerY);
-
-    ctx.fillStyle = '#29180e';
-    ctx.beginPath();
-    ctx.moveTo(-4, -2);
-    ctx.quadraticCurveTo(8, -26 * flap - 6, 24, -22 * flap - 10);
-    ctx.lineTo(14, -2);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.moveTo(16, -3); ctx.lineTo(34, -8); ctx.lineTo(35, 0); ctx.lineTo(32, 6); ctx.lineTo(16, 3);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#3d2516';
-    ctx.beginPath();
-    ctx.ellipse(2, 1, 20, 8.5, -0.06, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.arc(-17, 0, 7.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.moveTo(-23, -3); ctx.quadraticCurveTo(-34, -2, -31, 5); ctx.lineTo(-22, 3);
-    ctx.closePath();
-    ctx.fill();
-
-    const wingY = 26 * flap;
-    ctx.fillStyle = '#52321d';
-    ctx.beginPath();
-    ctx.moveTo(-8, 0);
-    ctx.quadraticCurveTo(4, wingY * 0.7, 22, wingY);
-    ctx.lineTo(27, wingY * 0.8);
-    ctx.lineTo(8, 4);
-    ctx.closePath();
-    ctx.fill();
-  } else if (obs.type === 'BRAMBLE') {
-    ctx.fillStyle = '#1e2918';
-    ctx.beginPath();
-    ctx.arc(24, -14, 18, 0, Math.PI * 2);
-    ctx.arc(48, -18, 22, 0, Math.PI * 2);
-    ctx.arc(72, -14, 17, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#3f2e21';
-    ctx.lineWidth = 3.5;
-    ctx.beginPath();
-    ctx.moveTo(4, 0);
-    ctx.quadraticCurveTo(28, -36, 50, -12);
-    ctx.quadraticCurveTo(70, -34, 88, 0);
-    ctx.stroke();
-
-    ctx.fillStyle = '#d6d3d1';
-    for (let tx = 10; tx < obs.width - 8; tx += 12) {
-      const ty = -14 - (tx % 24 === 0 ? 14 : 6);
-      ctx.beginPath();
-      ctx.moveTo(tx - 3, ty); ctx.lineTo(tx, ty - 11); ctx.lineTo(tx + 3, ty);
-      ctx.fill();
-    }
-  } else if (obs.type === 'BOAR') {
-    const swing = Math.sin(obs.legPhase) * 8;
-    ctx.strokeStyle = '#1c1917';
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(16, -12); ctx.lineTo(16 - swing, 0);
-    ctx.moveTo(24, -12); ctx.lineTo(24 + swing, 0);
-    ctx.moveTo(46, -12); ctx.lineTo(46 + swing, 0);
-    ctx.moveTo(54, -12); ctx.lineTo(54 - swing, 0);
-    ctx.stroke();
-
-    ctx.fillStyle = '#3b281e';
-    ctx.beginPath();
-    ctx.moveTo(64, -14);
-    ctx.quadraticCurveTo(50, -42, 22, -36);
-    ctx.lineTo(4, -20);
-    ctx.lineTo(8, -12);
-    ctx.lineTo(58, -10);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#fef3c7';
-    ctx.beginPath();
-    ctx.moveTo(8, -16);
-    ctx.quadraticCurveTo(-2, -26, 4, -31);
-    ctx.lineTo(11, -18);
-    ctx.fill();
-  } else if (obs.type === 'ROLLING_LOG') {
-    const r = obs.width / 2;
-    ctx.translate(r, -r);
-    ctx.rotate(obs.rot);
-    ctx.fillStyle = '#3d2817';
-    ctx.beginPath();
-    ctx.arc(0, 0, r, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#b45309';
-    ctx.beginPath();
-    ctx.arc(0, 0, r - 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.strokeStyle = '#78350f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(0, 0, r - 12, 0, Math.PI * 2);
-    ctx.moveTo(-r + 5, 0); ctx.lineTo(r - 5, 0);
-    ctx.moveTo(0, -r + 5); ctx.lineTo(0, r - 5);
-    ctx.stroke();
-  } else if (obs.type === 'VIPER') {
-    const lunge = Math.sin(obs.strikePhase) * 6;
-    ctx.strokeStyle = '#365314';
-    ctx.lineWidth = 8;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(42, -4);
-    ctx.quadraticCurveTo(18, -4, 24, -12);
-    ctx.quadraticCurveTo(36, -18, 16, -22);
-    ctx.lineTo(6 + lunge, -24);
-    ctx.stroke();
-
-    ctx.fillStyle = '#4d7c0f';
-    ctx.beginPath();
-    ctx.ellipse(5 + lunge, -24, 8, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.strokeStyle = '#ef4444';
-    ctx.lineWidth = 1.8;
-    ctx.beginPath();
-    ctx.moveTo(-3 + lunge, -24);
-    ctx.lineTo(-11 + lunge, -26);
-    ctx.moveTo(-3 + lunge, -24);
-    ctx.lineTo(-11 + lunge, -22);
-    ctx.stroke();
-  } else if (obs.type === 'MOOSE') {
-    const swing = Math.sin(obs.legPhase) * 10;
-    ctx.strokeStyle = '#271c15';
-    ctx.lineWidth = 6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.moveTo(26, -24); ctx.lineTo(26 - swing, 0);
-    ctx.moveTo(36, -24); ctx.lineTo(36 + swing, 0);
-    ctx.moveTo(64, -24); ctx.lineTo(64 + swing, 0);
-    ctx.moveTo(72, -24); ctx.lineTo(72 - swing, 0);
-    ctx.stroke();
-
-    ctx.fillStyle = '#3e2723';
-    ctx.beginPath();
-    ctx.moveTo(78, -26);
-    ctx.quadraticCurveTo(52, -62, 26, -54);
-    ctx.lineTo(8, -38);
-    ctx.lineTo(12, -28);
-    ctx.lineTo(74, -22);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#fde68a';
-    ctx.beginPath();
-    ctx.moveTo(22, -48);
-    ctx.lineTo(12, -66);
-    ctx.lineTo(18, -58);
-    ctx.lineTo(24, -68);
-    ctx.lineTo(30, -56);
-    ctx.lineTo(36, -64);
-    ctx.lineTo(32, -48);
-    ctx.closePath();
-    ctx.fill();
-  } else if (obs.type === 'CAMPFIRE') {
-    const flicker = Math.sin(obs.flamePhase) * 6;
-    ctx.fillStyle = '#291d12';
-    ctx.fillRect(6, -10, 50, 10);
-
-    ctx.fillStyle = 'rgba(234, 88, 12, 0.9)';
-    ctx.beginPath();
-    ctx.moveTo(10, -8);
-    ctx.quadraticCurveTo(22, -58 - flicker, 31, -54 + flicker);
-    ctx.quadraticCurveTo(44, -60 + flicker, 52, -8);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#fef08a';
-    ctx.beginPath();
-    ctx.moveTo(18, -8);
-    ctx.quadraticCurveTo(31, -38 - flicker, 44, -8);
-    ctx.closePath();
-    ctx.fill();
-  } else if (obs.type === 'SPIRE') {
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(14, -obs.height * 0.75);
-    ctx.lineTo(26, -obs.height);
-    ctx.lineTo(40, -obs.height * 0.65);
-    ctx.lineTo(obs.width, 0);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = '#475569';
-    ctx.beginPath();
-    ctx.moveTo(14, -obs.height * 0.75);
-    ctx.lineTo(26, -obs.height);
-    ctx.lineTo(28, 0);
-    ctx.lineTo(0, 0);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  ctx.restore();
-}
-
-function drawFood(f) {
-  ctx.save();
-  ctx.translate(f.x, f.y);
-  ctx.rotate(-0.22);
-
-  ctx.fillStyle = '#f5f5f4';
-  ctx.fillRect(-17, -2.5, 12, 5);
-  ctx.beginPath();
-  ctx.arc(-17, -3, 3.5, 0, Math.PI * 2);
-  ctx.arc(-17, 3, 3.5, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#fecdd3';
-  ctx.beginPath();
-  ctx.ellipse(2, 0, 13, 10, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.fillStyle = '#991b1b';
-  ctx.beginPath();
-  ctx.ellipse(1, 0, 10.5, 7.8, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  ctx.restore();
-}
-
-function drawFullScreenShadowBanner() {
-  if (!screenBanner.active) return;
-
-  const progress = 1 - (screenBanner.timer / screenBanner.duration);
-  const alpha = progress < 0.2
-    ? progress / 0.2
-    : (progress > 0.7 ? (1 - progress) / 0.3 : 1);
-
-  const scale = 0.94 + progress * 0.1;
-
-  ctx.save();
-  ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-
-  const vigGrad = ctx.createRadialGradient(
-    canvas.width / 2, canvas.height / 2, 90,
-    canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.65
-  );
-  vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0.12)');
-  if (screenBanner.theme === 'CRIMSON') {
-    vigGrad.addColorStop(1, 'rgba(127, 29, 29, 0.78)');
-  } else {
-    vigGrad.addColorStop(1, 'rgba(3, 5, 9, 0.78)');
-  }
-  ctx.fillStyle = vigGrad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.translate(canvas.width / 2, canvas.height / 2 - 10);
-  ctx.scale(scale, scale);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-
-  const fontSize = screenMode === 'PORTRAIT' ? 40 : 52;
-  ctx.font = `900 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.98)';
-  ctx.shadowBlur = 26;
-  ctx.shadowOffsetY = 8;
-
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-  ctx.lineWidth = 8;
-  ctx.strokeText(screenBanner.title, 0, 0);
-
-  ctx.fillStyle = screenBanner.theme === 'CRIMSON' ? '#f87171' : '#fef3c7';
-  ctx.fillText(screenBanner.title, 0, 0);
-
-  ctx.font = '800 14px "Segoe UI", system-ui, sans-serif';
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(screenBanner.subtitle, 0, 36);
-
-  ctx.restore();
-}
-
-function triggerGameOver() {
-  gameState = 'GAMEOVER';
-  overlayTitle.textContent = 'Run Ended';
-  overlayDesc.innerHTML = `Skill Score: <strong style="color:#fbbf24;">${skillScore}</strong> &bull; Hazard Tiers Unlocked: <strong>${highestTierUnlocked} / ${UNLOCK_TIERS.length}</strong>`;
-  startBtn.textContent = 'RUN AGAIN';
-  restartFromPauseBtn.classList.add('hidden');
-  overlay.classList.remove('hidden');
-}
-
-function resetGame() {
-  syncViewportDimensions();
-  wolf.reset();
-  skillScore = 0;
-  streak = 0;
-  multiplier = 1;
-  highestTierUnlocked = 0;
-  gameSpeed = screenMode === 'PORTRAIT' ? 380 : 430;
-  obstacles = [];
-  foods = [];
-  particles = [];
-  spawnObsTimer = 1.0;
-  spawnFoodTimer = 1.8;
-  screenBanner.active = false;
-  restartFromPauseBtn.classList.add('hidden');
-  lastTime = performance.now();
-  gameState = 'PLAYING';
-  updateHUD();
-}
-
-function gameLoop(timestamp) {
-  const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
-  lastTime = timestamp;
-
-  ctx.save();
-  if (screenShake > 0 && gameState === 'PLAYING') {
-    ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
-    screenShake = Math.max(0, screenShake - dt * 30);
-  }
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawEnvironment();
-
-  if (gameState === 'PLAYING') {
-    updateGame(dt);
-  }
-
-  obstacles.forEach(drawObstacle);
-  foods.forEach(drawFood);
-  wolf.draw();
-
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    if (gameState === 'PLAYING') {
-      p.x += p.vx * dt;
-      p.y += p.vy * dt;
-      p.life -= dt * 2.3;
-    }
-    if (p.life <= 0) {
-      particles.splice(i, 1);
-      continue;
-    }
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  drawFullScreenShadowBanner();
-
-  ctx.restore();
-  requestAnimationFrame(gameLoop);
-}
-
-// ==========================================
-// TWO-BUTTON CONTROLLER (UP & DOWN) + KEYBOARD
-// ==========================================
-btnUp.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  btnUp.classList.add('pressed');
-  wolf.leap();
-});
-const releaseUp = () => btnUp.classList.remove('pressed');
-btnUp.addEventListener('pointerup', releaseUp);
-btnUp.addEventListener('pointerleave', releaseUp);
-btnUp.addEventListener('pointercancel', releaseUp);
-
-btnDown.addEventListener('pointerdown', e => {
-  e.preventDefault();
-  btnDown.classList.add('pressed');
-  wolf.setCrouch(true);
-});
-const releaseDown = () => {
-  btnDown.classList.remove('pressed');
-  wolf.setCrouch(false);
-};
-btnDown.addEventListener('pointerup', releaseDown);
-btnDown.addEventListener('pointerleave', releaseDown);
-btnDown.addEventListener('pointercancel', releaseDown);
-
-window.addEventListener('keydown', e => {
-  if (e.code === 'KeyP' || e.code === 'Escape') {
-    e.preventDefault();
-    if (gameState === 'PLAYING') pauseGame('Game Paused');
-    else if (gameState === 'PAUSED') resumeGame();
-    return;
-  }
-  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-    e.preventDefault();
-    btnUp.classList.add('pressed');
-    wolf.leap();
-  } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-    e.preventDefault();
-    btnDown.classList.add('pressed');
-    wolf.setCrouch(true);
-  }
-});
-
-window.addEventListener('keyup', e => {
-  if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
-    btnUp.classList.remove('pressed');
-  } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
-    btnDown.classList.remove('pressed');
-    wolf.setCrouch(false);
-  }
-});
-
-startBtn.addEventListener('click', () => {
-  if (gameState === 'PAUSED') {
-    resumeGame();
-  } else {
-    overlay.classList.add('hidden');
-    resetGame();
-  }
-});
-
-restartFromPauseBtn.addEventListener('click', () => {
-  overlay.classList.add('hidden');
-  resetGame();
-});
-
-requestAnimationFrame(ts => {
-  lastTime = ts;
-  gameLoop(ts);
-});
-</script>
-</body>
-</html>
+    ctx.fillRect(8, -4, 7,
